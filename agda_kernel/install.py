@@ -21,8 +21,6 @@ def install_my_kernel_spec(user=True, prefix=None):
         # TODO: Copy any resources
 
         print('Installing Jupyter kernel spec')
-        # 'haskell' necessary for code highlighting
-        # replace with 'agda' once a CodeMirror extension for Agda is available
         KernelSpecManager().install_kernel_spec(td, 'agda', user=user, prefix=prefix)
 
 def _is_root():
