@@ -50,6 +50,7 @@ Hitting TAB again will go back to the base form.
 
 | base form | alternate form |
 |:---------:|:----------------:|
+| -> | → |
 | \ | λ |
 | < | ⟨ |
 | B | 𝔹 |
