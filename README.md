@@ -14,7 +14,8 @@ Installation
 Functionality
 -------------
 
-Each code cell must begin with a line of the  form ``module A.B.C where``:
+Each code cell must begin with a line of the  form ``module A.B.C where``.
+For instance:
 
 ```agda
 module A.B.C where
@@ -36,19 +37,36 @@ If the expression is just a literal, then the cursor should be inside, or in the
 
 - Normalise a closed expression,
 by putting the cursor near the expression and hitting TAB.
+Expression localisation follows the same rules as in the previous point.
 
 Editing
 -------
 
-|base form|alternative form||base form|alternative form|
-|:-------:|:--------------:||:-------:|:--------------:|
-| \ | λ || < | ⟨ |
-| B | 𝔹 || > | ⟩ |
-| = | ≡ || top | ⊤ |
-| /= | ≢ || bot | ⊥ |
-| alpha | α || /\ | ∧ |
-| e | ε || \/ | ∨ |
-| emptyset | ∅ || neg | ¬ |
-| qed | ∎ || forall | ∀ |
-| Sigma | Σ || exists | ∃ |
-| Pi | Π || \[= | ⊑ |
+Inputting common UNICODE characters is facilitated by the code-completion feature of Jupyter.
+
+- When the cursor is immediately to the right of one of the `base form` symbols
+hitting TAB will replace it by the corresponding `alternate form`.
+Hitting TAB again will go back to the base form.
+
+| base form | alternate form |
+|:---------:|:----------------:|
+| \ | λ |
+| < | ⟨ |
+| B | 𝔹 |
+| > | ⟩ |
+| = | ≡ |
+| top | ⊤ |
+| /= | ≢ |
+| bot | ⊥ |
+| alpha | α |
+| /\ | ∧ |
+| e | ε |
+| \/ | ∨ |
+| emptyset | ∅ |
+| neg | ¬ |
+| qed | ∎ |
+| forall | ∀ |
+| Sigma | Σ |
+| exists | ∃ |
+| Pi | Π |
+| \[= | ⊑ |
