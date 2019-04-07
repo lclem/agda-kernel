@@ -118,7 +118,9 @@ class AgdaKernel(Kernel):
                 rest = line[len(key):]
 
                 # extract all the strings in quotation marks "..."
-                values = re.findall('"([^"]*)"', rest)
+                rest = rest.replace("\\\"", "§") # replace \" with §
+                values = re.findall('"([^"]*)"', rest) # find all strings in quotation marks "..."
+                values = [val.replace("§", "\"") for val in values] # replace § with " (no escape)
 
                 if not key in result:
                     result[key] = []
@@ -130,23 +132,36 @@ class AgdaKernel(Kernel):
 
         return result
 
-    def getFileName(self, code):
+    def getModuleName(self, code):
 
         lines = code.split('\n')
         firstLine = lines[0]
 
-        if not bool(re.match(r'module *[a-zA-Z0-9\-]* *where', firstLine)):
+        if not bool(re.match(r'module *[a-zA-Z0-9.\-]* *where', firstLine)):
 
             return ""
 
         else:
 
             # fileName = "tmp/" + re.sub(r"-- *", "", firstLine)
-            fileName = re.sub(r'module *', "", firstLine)
-            fileName = re.sub(r' *where', "", fileName)
-            fileName = fileName + ".agda"
+            moduleName = re.sub(r'module *', "", firstLine)
+            moduleName = re.sub(r' *where', "", moduleName)
+            moduleName = moduleName
 
-            return fileName
+            return moduleName
+
+    def getFileName(self, code):
+
+        moduleName = self.getModuleName(code)
+        return moduleName.replace(".", "/") + ".agda"
+
+    def getDirName(self, code):
+
+        moduleName = self.getModuleName(code)
+        last = moduleName.rfind(".")
+        prefixName = moduleName[:last]
+        return prefixName.replace(".", "/")
+
 
     def do_shutdown(self, restart):
 
@@ -156,6 +171,7 @@ class AgdaKernel(Kernel):
 
         self.startAgda()
         fileName = self.getFileName(code)
+        dirName = self.getDirName(code)
 
         if fileName == "":
             err = "Error: the first line of the cell should be in the format \"module [modulename] where\""
@@ -163,6 +179,9 @@ class AgdaKernel(Kernel):
 
         else:
             #self.log.error("file: %s" % fileName)
+
+            if not os.path.exists(dirName):
+                os.makedirs(dirName)
 
             lines = code.split('\n')
             numLines = len(lines)
@@ -184,6 +203,8 @@ class AgdaKernel(Kernel):
 
             for info in response[AGDA_INFO_ACTION]:
                 result += info[0] + ("(" + info[1] + ")" if len(info) > 1 and len(info[1]) > 0 else "") + "\n"
+
+            result = result.replace("\\n", "\n") # replace escaped \n with actual new line
 
             try:
                 #remove the .agdai file
@@ -211,35 +232,78 @@ class AgdaKernel(Kernel):
                 'user_expressions': {},
                }
                
+    def find_expression(self, code, cursor_pos):
+
+        length = len(code)
+        i = cursor_pos
+
+        forbidden = [" ", "\n", "(", ")", "{", "}", ":"]
+
+        if code[cursor_pos] in forbidden:
+            # go left until you find a parenthesis
+            while code[i] not in ["(", ")"] and i > 0:
+                i -= 1
+
+        start = i
+        end = -1
+        expression = ""
+        p = code[start]
+
+        # we found a parenthesis
+        if p in ["(", ")"]:
+
+            # if "(", go right to find the matching ")"
+            # if ")", go left to find the matching "("
+
+            q = "(" if p == ")" else ")" # the opposite parenthesis
+            d = 1 if p == "(" else -1
+
+            self.log.error(f'going for parentheses "{p}" and "{q}"; i = {i}, len = {length}')
+
+            n = 0
+
+            while i >= 0 and i < length:
+                n += 1 if code[i] == p else -1 if code[i] == q else 0
+                i += d
+
+                if n == 0: # bingo!
+                    end = i - d # undo the last step
+
+                    if start > end: # swap if necessary
+                        start, end = end, start
+
+                    expression = code[start : end + 1]
+                    self.log.error(f'bingo! i = {i}, n = {n}, token = {expression}')
+
+                    break
+        # no parentheses to be found
+        else:
+
+            self.log.error(f'going for spaces')
+
+            start = cursor_pos - 1
+
+            while start >= 0 and code[start] not in forbidden:
+                start -= 1
+
+            end = cursor_pos
+
+            while end < length and code[end] not in forbidden:
+                end += 1
+
+            expression = code[start + 1 : end]
+
+        expression = escapify(expression)
+             
+        self.log.error(f'considering expression: \"{expression}\"')
+        return start, end, expression
+
     # get the type of the current expression
+    # triggered by SHIFT+TAB
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
         fileName = self.getFileName(code)
-
-        #line, line_start_pos = line_at_cursor(code, cursor_pos)
-
-        cursor_start = cursor_pos - 1
-
-        while cursor_start >= 0 and code[cursor_start] != " " and code[cursor_start] != "\n":
-            cursor_start -= 1
-
-        cursor_end = cursor_pos
-
-        while cursor_end < len(code) and code[cursor_end] != " " and code[cursor_end] != "\n":
-            cursor_end += 1
-
-        token = code[cursor_start+1:cursor_end] #token_at_cursor(code, cursor_pos)
-
-        if token[0] == "{" or token[0] == "}":
-            token = token[1:]
-            cursor_start += 1
-
-        if token[len(token)-1] == "{" or token[len(token)-1] == "}":
-            token = token[:-1]
-            cursor_end -= 1
-
-        exp = token
-        self.log.error(f'considering expression: \"{exp}\"')
+        cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
 
         error = False
 
@@ -247,6 +311,7 @@ class AgdaKernel(Kernel):
 
             if fileName in self.cells and self.cells[fileName] != "":
 
+                # find out line and column of the cursors
                 line1, col1 = line_of(self, code, cursor_start)
                 line2, col2 = line_of(self, code, cursor_end)
 
@@ -259,13 +324,15 @@ class AgdaKernel(Kernel):
                     response = self.interact(cmd)
 
                     inferred_type = ""
+                    resp = deescapify(response[AGDA_INFO_ACTION][0][1])
 
                     if response[AGDA_STATUS_ACTION][0][0] in [AGDA_CHECKED, ""]:
                         if response[AGDA_INFO_ACTION][0][0] == AGDA_INFERRED_TYPE:
-                            inferred_type = response[AGDA_INFO_ACTION][0][1]
+                            inferred_type = resp
                             result = f'{exp} : {inferred_type}' if inferred_type != "" else str(response)
-                    elif response[AGDA_INFO_ACTION][0][0] == AGDA_ERROR:
-                        result = ""
+                    
+                    if response[AGDA_INFO_ACTION][0][0] == AGDA_ERROR:
+                        result = f'{exp} : ERROR: {resp}'
 
             else:
                 error = True
@@ -298,34 +365,49 @@ class AgdaKernel(Kernel):
         fileName = self.getFileName(code)
 
         half_subst = {
-            '\\top' : '⊤',
-            '\\bot' : '⊥',
-            '\\neg' : '¬',
+            '<=<>' : '≤⟨⟩',
+            '<==<>' : '≤≡⟨⟩',
+            '=<>' : '≡⟨⟩',
+            'top' : '⊤',
+            'bot' : '⊥',
+            'neg' : '¬',
             '/\\' : '∧',
             '\\/' : '∨',
-             '\\' : 'λ', # it is important that this comes after /\
-            '\\<' : '⟨',
-            '\\>' : '⟩',
-            '\\Pi' : 'Π',
-            '\\Sigma' : 'Σ',
+            '\\' : 'λ', # it is important that this comes after /\
+            'Pi' : 'Π',
+            'Sigma' : 'Σ',
             '->' : '→',
+            '<' : '⟨',
+            '>' : '⟩', # it is important that this comes after ->
             'forall' : '∀',
             'exists' : '∃',
-            '\\A' : '𝔸',
-            '\\B' : '𝔹',
-            '\\C' : 'ℂ',
-            '\\N' : 'ℕ',
-            '\\Q' : 'ℚ',
-            '\\R' : 'ℝ',
-            '\\Z' : 'ℤ',
-            '\\=' : '≡',
-            '\\<=' : '⊑',
-            '\\alpha' : 'α',
-            '\\beta' : 'β',
-            '\\e' : 'ε',
-            '\\xor' : '⊗',
-            '\\emptyset' : '∅',
-            '\\qed' : '∎'
+            'A' : '𝔸',
+            'B' : '𝔹',
+            'C' : 'ℂ',
+            'N' : 'ℕ',
+            'Q' : 'ℚ',
+            'R' : 'ℝ',
+            'Z' : 'ℤ',
+            '/=' : '≢',
+            '<=' : '≤',
+            '=' : '≡',
+            '[=' : '⊑',
+            'alpha' : 'α',
+            'beta' : 'β',
+            'e' : 'ε',
+            'xor' : '⊗',
+            'emptyset' : '∅',
+            'qed' : '∎',
+            '.' : '·',
+            'd' : '∇',
+            'notin' : '∉',
+            'in' : '∈',
+            '[' : '⟦',
+            ']' : '⟧',
+            '::' : '∷',
+            '0' : '𝟬', # '𝟢',
+            '1' : '𝟭', # '𝟣'
+            '+' : "⨁"
         }
 
         other_half = {val : key for (key, val) in half_subst.items()}
@@ -333,86 +415,78 @@ class AgdaKernel(Kernel):
         keys = [key for (key, val) in subst.items()]
 
         matches = []
-        cursor_start = cursor_pos
 
-        # the character just before the cursor position
-        cursor_ch = code[cursor_pos-1]
+        for key in keys:
+            n = len(key)
+            cursor_start = cursor_pos - n
+            cursor_end = cursor_pos
+            s = code[cursor_start:cursor_pos]
 
-        self.log.error("cursor_ch %s" % cursor_ch)
+            if s == key:
+                # we have a match
+                matches = [subst[key]]
+                break
 
-        # normalise expressions in parentheses
-        if cursor_ch == ")":
-            #find the previous matching "("
-            i = cursor_pos - 1
-            n = 0
+        # didn't apply a textual substitution, go for normalisation
+        if matches == []:
+            cursor_start, cursor_end, exp_orig = self.find_expression(code, cursor_pos)
+            exp = escapify(exp_orig)
+            cursor_start += 1
 
-            while i >= 0:
-                n += 1 if code[i] == ")" else -1 if code[i] == "(" else 0
-                i -= 1
+            if fileName != "" and exp != "":
 
-                if n == 0:
-                    cursor_start = i + 2
-                    cursor_end = cursor_pos - 1
-                    # remove the parentheses
-                    exp = code[cursor_start : cursor_end]
-                    self.log.error("we have a match: %s" % exp)
+                if fileName in self.cells and self.cells[fileName] != "":
 
-                    if fileName != "" and exp != "":
+                    pos1 = cursor_start
+                    pos2 = cursor_end
 
-                        if fileName in self.cells and self.cells[fileName] != "":
+                    line1, column1 = line_of(self, code, pos1)
+                    line2, column2 = line_of(self, code, pos2)
 
-                            pos1 = cursor_start
-                            pos2 = cursor_end
+                    if line1 == -1 or line2 == -1: # should not happen
+                        result = "Internal error"
+                    else:
+                        # send the normalisation command to Agda
+                        cmd = f'IOTCM \"{fileName}\" None Indirect (Cmd_compute_toplevel DefaultCompute \"{exp}\")'
+                        #cmd = f'IOTCM \"{fileName}\" NonInteractive Indirect (Cmd_compute DefaultCompute 0 (intervalsToRange (Just (mkAbsolute \"{fileName}\")) [Interval (Pn () {pos1} {line1} {column1}) (Pn () {pos2} {line2} {column2})]) \"{exp}\")'
+                        result = self.interact(cmd)
 
-                            line1, column1 = line_of(self, code, pos1)
-                            line2, column2 = line_of(self, code, pos2)
+                        info = result[AGDA_INFO_ACTION][0]
 
-                            if line1 == -1 or line2 == -1: # should not happen
-                                result = "Internal error"
-                            else:
-                                # send the normalisation command to Agda
-                                cmd = f'IOTCM \"{fileName}\" None Indirect (Cmd_compute_toplevel DefaultCompute \"{exp}\")'
-                                #cmd = f'IOTCM \"{fileName}\" NonInteractive Indirect (Cmd_compute DefaultCompute 0 (intervalsToRange (Just (mkAbsolute \"{fileName}\")) [Interval (Pn () {pos1} {line1} {column1}) (Pn () {pos2} {line2} {column2})]) \"{exp}\")'
-                                result = self.interact(cmd)
+                        code = info[0]
+                        message = info[1]
 
-                                info = result[AGDA_INFO_ACTION][0]
+                        if code == AGDA_NORMAL_FORM:
+                            # return the normal form
+                            self.log.error(f'agda gave us: {message}')
+                            result = deescapify(message)
+                            self.log.error(f'deescapified: {result}')
 
-                                code = info[0]
-                                message = info[1]
-
-                                if code == AGDA_NORMAL_FORM:
-                                    # return the normal form
-                                    result = message
-
-                                    # remove parentheses if it was already in normal form
-                                    if message == exp:
-                                        cursor_start -= 1
-                                        cursor_end += 1
-                                        
-                                elif code == AGDA_ERROR:
-                                    result = "" # "Error: " + message # there was an error
-                                else:
-                                    result = "Unexpected error. Agda said:\n\n" + str(result)
-
+                            # remove parentheses if it was already in normal form
+                            #if result == exp_orig:
+                            #    cursor_start -= 1
+                            #    cursor_end += 1
+                                
+                        elif code == AGDA_ERROR:
+                            result = "" # "Error: " + message # there was an error
                         else:
-                            result = "the cell should be evaluated first"
+                            result = "Unexpected error. Agda said:\n\n" + str(result)
 
-                    matches = [result] if result != "" else []
-                    break
-        else:
-            for key in keys:
-                n = len(key)
-                cursor_start = cursor_pos - n
-                cursor_end = cursor_pos
-                s = code[cursor_start:cursor_pos]
+                else:
+                    result = "the cell should be evaluated first"
 
-                #self.log.error("code str %s" % s)
-
-                if s == key:
-                    # we have a match
-                    matches = [subst[key]]
-                    break
+            matches = [result] if result != "" else []
 
         return {'matches': sorted(matches), 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': dict(),
-                'status': 'ok'}
+            'status': 'ok'}
+
+def escapify(s):
+    # escape quotations, new lines
+    result = s.replace("\"", "\\\"").replace("\n", "\\n")
+    return result
+
+def deescapify(s):
+     # go back
+    result = s.replace("\\\"", "\"").replace("\\n", "\n")
+    return result
