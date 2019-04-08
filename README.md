@@ -9,6 +9,7 @@ An experimental Agda kernel for Jupyter.
 Installation
 ------------
 
+    pip install agda_kernel
     python -m agda_kernel.install
 
 Functionality

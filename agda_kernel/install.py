@@ -8,7 +8,7 @@ from IPython.utils.tempdir import TemporaryDirectory
 
 kernel_json = {
     "argv": [sys.executable, "-m", "agda_kernel", "-f", "{connection_file}"],
-    "display_name": "agda",
+    "display_name": "Agda",
     "name": "agda",
     "language": "agda",
 }
@@ -19,8 +19,12 @@ def install_my_kernel_spec(user=True, prefix=None):
         with open(os.path.join(td, 'kernel.json'), 'w') as f:
             json.dump(kernel_json, f, sort_keys=True)
         # TODO: Copy any resources
+        
+         # Copy logo to tempdir to be installed with kernelspec
+        #logo_path = resource_filename('stata_kernel', 'docs/logo-64x64.png')
+        #copyfile(logo_path, os.path.join(td, 'logo-64x64.png'))
 
-        print('Installing Jupyter kernel spec')
+        print(f'Installing Jupyter kernel spec (user = {user}, prefix = {prefix}), in {td}')
         KernelSpecManager().install_kernel_spec(td, 'agda', user=user, prefix=prefix)
 
 def _is_root():

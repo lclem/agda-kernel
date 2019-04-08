@@ -44,10 +44,10 @@ def line_of(self, s, n):
 class AgdaKernel(Kernel):
     implementation = 'agda'
     implementation_version = '0.2'
-    language = 'agda' # change this to 'agda' when CodeMirror will have a corresponding mode
+    language = 'agda'
     language_version = '0.2'
     language_info = {
-        'name': 'agda', # any text
+        'name': 'Agda', # any text
         'mimetype': 'text/agda',
         'file_extension': '.agda',
     }
@@ -153,15 +153,14 @@ class AgdaKernel(Kernel):
     def getFileName(self, code):
 
         moduleName = self.getModuleName(code)
-        return moduleName.replace(".", "/") + ".agda"
+        return moduleName.replace(".", "/") + ".agda" if moduleName != "" else ""
 
     def getDirName(self, code):
 
         moduleName = self.getModuleName(code)
         last = moduleName.rfind(".")
         prefixName = moduleName[:last]
-        return prefixName.replace(".", "/")
-
+        return prefixName.replace(".", "/") if last != -1 else ""
 
     def do_shutdown(self, restart):
 
@@ -173,6 +172,8 @@ class AgdaKernel(Kernel):
         fileName = self.getFileName(code)
         dirName = self.getDirName(code)
 
+        self.log.error(f'detected fileName: {fileName}, dirName: {dirName}')
+
         if fileName == "":
             err = "Error: the first line of the cell should be in the format \"module [modulename] where\""
             result = err
@@ -180,7 +181,7 @@ class AgdaKernel(Kernel):
         else:
             #self.log.error("file: %s" % fileName)
 
-            if not os.path.exists(dirName):
+            if dirName != "" and not os.path.exists(dirName):
                 os.makedirs(dirName)
 
             lines = code.split('\n')
