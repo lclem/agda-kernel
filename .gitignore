@@ -5,3 +5,4 @@ __pycache__/
 /build/
 /MANIFEST
 .DS_Store
+agda_kernel.egg-info/

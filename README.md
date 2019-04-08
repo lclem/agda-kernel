@@ -12,6 +12,22 @@ Installation
     pip install agda_kernel
     python -m agda_kernel.install
 
+Syntax highlighting is done separately by [Codemirror](https://codemirror.net/),
+but unfortunately there is no Agda mode packaged with it.
+A rudimentary Agda mode for Codemirror can be found in ``codemirror-agda/agda.js``.
+It needs to be manually installed inside Jupyter, as follows:
+Let `dir` be the result of executing the following command
+
+    pip show notebook | grep Location | cut -d ' ' -f 2
+
+(It is something like ``/usr/local/lib/python3.7/site-packages``,
+``~/anaconda3/lib/python3.7/site-packages``,
+or  ``/usr/local/Cellar/jupyter/1.0.0_5/libexec/lib/python3.7/site-packages/``.)
+Then, 
+
+    mkdir -p dir/notebook/static/components/codemirror/mode/agda
+    cp codemirror-agda/agda.js dir/notebook/static/components/codemirror/mode/agda
+
 Functionality
 -------------
 
@@ -26,7 +42,7 @@ id x = x
 ```
 
 Upon execution, the file `A/B/C.agda` is created containing the cell's contents,
-and it is fed to the Agda interpreter (via `agda --interact`).
+and it is fed to the Agda interpreter (via `agda --interaction`).
 The result of typechecking the cell are then displayed.
 
 After a cell has been evaluated, one can

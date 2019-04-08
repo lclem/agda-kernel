@@ -8,7 +8,7 @@ from IPython.utils.tempdir import TemporaryDirectory
 
 kernel_json = {
     "argv": [sys.executable, "-m", "agda_kernel", "-f", "{connection_file}"],
-    "display_name": "Agda",
+    "display_name": "agda",
     "name": "agda",
     "language": "agda",
 }

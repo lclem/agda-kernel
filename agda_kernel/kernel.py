@@ -47,7 +47,7 @@ class AgdaKernel(Kernel):
     language = 'agda'
     language_version = '0.2'
     language_info = {
-        'name': 'Agda', # any text
+        'name': 'agda',
         'mimetype': 'text/agda',
         'file_extension': '.agda',
     }
