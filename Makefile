@@ -10,14 +10,14 @@ all: build local-install codemirror-install # kernel-install
 test: build local-install kernel-install codemirror-install
 	jupyter nbconvert --to notebook --execute example/example.ipynb  --output example-output.ipynb
 
-build: dist/agda_kernel-0.2-py3-none-any.whl
+build: dist/agda_kernel-0.3-py3-none-any.whl
 
-dist/agda_kernel-0.2-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
+dist/agda_kernel-0.3-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
 	python setup.py bdist_wheel
 
 local-install: build
 	pip install .
-	# python -m pip install --force-reinstall dist/agda_kernel-0.2-py3-none-any.whl
+	# python -m pip install --force-reinstall dist/agda_kernel-0.3-py3-none-any.whl
 
 # run after the agda_kernel module is installed
 kernel-install: build
