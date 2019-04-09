@@ -8,7 +8,7 @@ setup(
     name='agda_kernel',
     version='0.2',
     #packages=['src/agda_kernel'],
-    packages=find_packages(where="src"),
+    packages=setuptools.find_packages(where="src"),
     package_dir={"": "src"},
     description='A rudimentary Jupyter kernel for Agda',
     long_description=readme,
