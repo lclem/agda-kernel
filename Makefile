@@ -12,7 +12,7 @@ test: build local-install kernel-install codemirror-install
 
 build: dist/agda_kernel-0.2-py3-none-any.whl
 
-dist/agda_kernel-0.2-py3-none-any.whl: setup.py agda_kernel/install.py agda_kernel/kernel.py
+dist/agda_kernel-0.2-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
 	python setup.py bdist_wheel
 
 local-install: build
