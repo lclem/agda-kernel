@@ -7,7 +7,9 @@ with open('README.md') as f:
 setup(
     name='agda_kernel',
     version='0.2',
-    packages=['src/agda_kernel'],
+    #packages=['src/agda_kernel'],
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     description='A rudimentary Jupyter kernel for Agda',
     long_description=readme,
     #long_description_content_type="text/markdown",
