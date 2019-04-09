@@ -43,9 +43,9 @@ def line_of(self, s, n):
 
 class AgdaKernel(Kernel):
     implementation = 'agda'
-    implementation_version = '0.2'
+    implementation_version = '0.3'
     language = 'agda'
-    language_version = '0.2'
+    language_version = '0.3'
     language_info = {
         'name': 'agda',
         'mimetype': 'text/agda',
