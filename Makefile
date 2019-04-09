@@ -1,4 +1,4 @@
-.PHONY: clean all build install kernel-install
+.PHONY: clean all build install kernel-install test
 
 SITE-PACKAGES = $(shell pip show notebook | grep Location | cut -d ' ' -f 2)
 CODEMIRROR = $(SITE-PACKAGES)/notebook/static/components/codemirror
@@ -6,6 +6,9 @@ CODEMIRROR-AGDA = $(CODEMIRROR)/mode/agda
 $(info CODEMIRROR-AGDA: $(CODEMIRROR-AGDA))
 
 all: build local-install kernel-install codemirror-install
+
+test: build local-install kernel-install codemirror-install
+	jupyter nbconvert --to notebook --execute example/example.ipynb  --output example-output.ipynb
 
 build: dist/agda_kernel-0.2-py3-none-any.whl
 
