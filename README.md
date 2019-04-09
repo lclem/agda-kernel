@@ -1,3 +1,4 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lclem/agda-kernel/master)
 [![Build Status](https://travis-ci.org/lclem/agda-kernel.svg)](https://travis-ci.org/lclem/agda-kernel)
 [![Jupyter Notebook](https://img.shields.io/badge/jupyter-5.7.8-blue.svg)](https://github.com/jupyter/notebook/releases/tag/5.7.8)
 [![Agda](https://img.shields.io/badge/agda-2.5.4.2-blue.svg)](https://github.com/agda/agda/releases/tag/v2.5.4.2)
