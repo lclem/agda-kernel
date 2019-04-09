@@ -26,8 +26,6 @@ script:
 #  - pytest
   - pip install .
   - make test
-  
-pip install .
 
 notifications:
   email: false
