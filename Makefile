@@ -5,7 +5,7 @@ CODEMIRROR = $(SITE-PACKAGES)/notebook/static/components/codemirror
 CODEMIRROR-AGDA = $(CODEMIRROR)/mode/agda
 $(info CODEMIRROR-AGDA: $(CODEMIRROR-AGDA))
 
-all: build local-install kernel-install codemirror-install
+all: build local-install codemirror-install # kernel-install
 
 test: build local-install kernel-install codemirror-install
 	jupyter nbconvert --to notebook --execute example/example.ipynb  --output example-output.ipynb
@@ -16,7 +16,8 @@ dist/agda_kernel-0.2-py3-none-any.whl: setup.py src/agda_kernel/install.py src/a
 	python setup.py bdist_wheel
 
 local-install: build
-	python -m pip install --force-reinstall dist/agda_kernel-0.2-py3-none-any.whl
+	pip install .
+	# python -m pip install --force-reinstall dist/agda_kernel-0.2-py3-none-any.whl
 
 # run after the agda_kernel module is installed
 kernel-install: build
