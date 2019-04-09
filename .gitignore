@@ -6,3 +6,5 @@ __pycache__/
 /MANIFEST
 .DS_Store
 agda_kernel.egg-info/
+example/example-output.ipynb
+example/*.agda
