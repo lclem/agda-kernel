@@ -1,34 +1,24 @@
 sudo: required
-dist: xenial   # required for Python >= 3.7
+dist: xenial
 language: python
 virtualenv:
   system_site_packages: true
 python:
-#  - "2.6"
-#  - "2.7"
-#  - "3.3"
-#  - "3.4"
-#  - "3.5"
-#  - "3.5-dev"  # 3.5 development branch
-  - "3.6"
-  - "3.6-dev"  # 3.6 development branch
-  - "3.7"
-  - "3.7-dev"  # 3.7 development branch
-  - "3.8-dev"  # 3.8 development branch
-  - "nightly"  # nightly build
-
+- '3.6'
+- 3.6-dev
+- '3.7'
+- 3.7-dev
+- 3.8-dev
+- nightly
 before_install:
-  - sudo apt-get install -y agda-mode
-
-# command to install dependencies
+- sudo apt-get install -y agda-mode
 install:
-  - pip install -r requirements.txt
-
-# command to run tests
+- pip install -r requirements.txt
 script:
-#  - pytest
-  - pip install .
-  - make test
-
+- pip install .
+- make test
 notifications:
   email: false
+deployment:
+  password:
+    secure: TIJHkql5ShIPU/g1gMNmv43HYA99hvRTWh/PZmMGQdIs45MfKVUwuZys2EVI+my8sMxbXr33/ZICJmD2Mpja86x94YkUvkLxO/nNUhDMrKLL5PWe6nq0JHtTGGf+47DiCS61l79HMd9L6kRKvlSDktbHG/vORU7wfcip6OcqTZ5MCMa+FJYDXcyB2jehZFwr29pjGF4zgml6mUBKnp2VrOd7Fcqj/8LoWCK+RLxlM/x5ZlTiKTzJeph4eycQgBmmNV6Rc3RLBFqMG3K0PbrqJDuy1H1bylzz+u9W8IWsKqrFhOf3XKC2qC9MCbHt33P3qqv+Fie6D7pQz7hxKtMgGmir4mTTVl75rhNRGwd3eAgUDShBrNB7gf1TGzjz91qCZhHped2HaZuXk767Mo/qUs95bfBbNYFa/oAubYY6vTjJ4c/uhC+frEbZasknZigmYM9HIkj4Iy8XqYPNv1oV9lHiZGBA3LDnBsnU7qv0U02hYYCZbrTosxDo4lv2afnN9intBTItaNpsn+v+jmFZmMOTOEgaDXiKIL76VYVpuXyVqT1OgrC1r05s+NI1wU+JzlGqRRMyBuqdc1ywmJoxZCCDVr6FUi28p8ZcwrSwsObtDWtdOcPcCxYgXiRCMM3iNNctVWBFRioEbHxR71uwkHRIHfiu4BD5RaDMMIh/cyw=
