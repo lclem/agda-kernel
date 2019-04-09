@@ -1,1 +1,2 @@
 jupyter
+agda_kernel

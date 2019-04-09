@@ -1,6 +1,14 @@
 #!/bin/bash
 
-make all
 make local-install
-make pip-install
 make kernel-install
+make codemirror-install
+
+#sudo apt-get install agda-mode
+#sudo apt-get install agda-stdlib
+
+#pip install agda_kernel
+
+#cabal update
+#cabal install Agda
+#agda-mode setup
