@@ -24,4 +24,10 @@ install:
 # command to run tests
 script:
 #  - pytest
+  - pip install .
   - make test
+  
+pip install .
+
+notifications:
+  email: false
