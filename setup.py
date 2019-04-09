@@ -14,7 +14,7 @@ setup(
     author='Lorenzo Clemente',
     author_email='clementelorenzo@gmail.com',
     url='https://github.com/lclem/agda-kernel',
-    #install_requires=['jupyter_client', 'IPython', 'ipykernel'],
+    install_requires=['jupyter_client', 'IPython', 'ipykernel'],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
