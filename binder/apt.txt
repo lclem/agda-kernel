@@ -1,0 +1,2 @@
+agda-mode
+agda-stdlib
