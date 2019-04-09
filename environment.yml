@@ -6,6 +6,4 @@ dependencies:
   - numpy
   - agda_kernel
   - pip:
-    - nbgitpuller
-    - pandas
-    - matplotlib
+    - agda_kernel
