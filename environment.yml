@@ -1,0 +1,11 @@
+name: example-environment
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - numpy
+  - agda_kernel
+  - pip:
+    - nbgitpuller
+    - pandas
+    - matplotlib
