@@ -1,12 +1,7 @@
 sudo: required
-
 dist: xenial
-
 language: python
-
-virtualenv:
-#  system_site_packages: true
-  
+virtualenv: 
 python:
 - '3.6'
 - 3.6-dev
@@ -14,24 +9,21 @@ python:
 - 3.7-dev
 - 3.8-dev
 - nightly
-
 before_install:
 - sudo apt-get install -y agda-mode
-
 install:
 - pip install -r requirements.txt
-
 script:
 - pip install .
 - make test
-
 notifications:
   email: false
-   
 after_script: cd ~
-
 deploy:
   provider: pypi
-  user: "lorenzo"
+  user: lorenzo
   password:
-    secure: uLJYrcy5iL2VpzdiAYrENu33M3uA4kRIkKi7ndg79lhX3PcyaPhgqewnZq/a7aJjaKICNh6tzK4IDRLy50QH1uY7ovHA30mGmYeOGZUNoGdeddEkVp3q42YPVNQ32EL+xYYDlBjRH7rQXwQ2Ft+pOG7dMrLf7OKJswPGFk+9VmFQHBK/nWX03RMGETvDC7DO+W6w+wlNck/R8VV4FTf7VXKFzFfmhVt3YejFING5SuyysGRDTLmpGdcCMYnM6jxSOVgvu81Q9kFZnygTZzA/g96a/pKcvYgyEyFZnqaYUHODTZqo+r9wEdz+7ZX1CpNc/8Kv7o92WzB36XeCyXQ5OH4VZ4oo5wwOCWNcjMJonaHlIE5eiBLiHt5LIRcYIm3YrtAz7rxxaDfw1D08ELCksKrn2xAeCQYSCnAdAkow96DB/4TXF5KT2Xl2LFyFEKKWqyuKMXBrRLwuOV0t4oeZZ+3IqESbqme8h+ZER/wlDx+h0JH3wtJOWJ423K6GGIz0ZekGMlsITvMrvQIB+EPVOiIflxdQHZE1iOi1DSALPnmrUNaTeO64f6bN+1/eAONSmDnvEYZD9BbIAwASqFYAucQWjklk5PHdDzoHsLxe+XlqFXm/ehSAgJSt82sY/ethFFZoI2zUsv0QHP3/r0SdgdwA/1YA318ls3PH6EhxL2Y=
+    secure: Xm+2Za4jKUgZZM2wBNC6ufLHrwP+kypf4xirskZsTKJ9fKk2t8NV7k0H5J8pj5ytrCkKwO50GueBXKRp7nxqhU/4fWwjOlGKvi7g924XffG9DzN3wcml0X8GibtrP1ynU5ZTKcHGcgCGREfCsBe3snzuYkBePkVnmR+JNYo8l7SppBKUKZeVjT/YaMKv6P9P2uYTi/qjNqzL+KmJdXIBOboVXffZI4QjOo8kYauYLf6Dv477DuVtJWF6m2dw92MAxQvC/Cwm9hl1iOuj5w6yYWU4gGiwBFkmPjv3AxfZiQHUSHBX1v8bnYDTDxp4dFnbo3TqYoim4+A9QyYKLT0RUNz0+mrjcP2+XyiTKMU7m3WGxGHgRmcfEGXxAuoFXK8ikf45n6YCSeF3e+eSp3467LvqZOkrzPwsAKpt5IeU6cutv0dBzlMTQ97Bw5Kv06iOr/XscPYHQhm2dRhUgh+LbocfyoBWBSUC2nVerNolO76AFaTBzg2SA2D2eAAox05eTegdGIC9ySt0pyaKJnrJc7Hc8dGnlddpJnP96nFfKK3HEqXWHouH4U1H9VrewUetnxlw4EWTm70DMaeanTwAYmrrl0Wc6jjUFNn6MiLM9GVN47zT9ojVUTkDpxJI+xPd7Or38zewNLb+Bqdn5L5kWj+EEobcNgk5rfJTof5qM8E=
+env:
+  global:
+  - secure: Xm+2Za4jKUgZZM2wBNC6ufLHrwP+kypf4xirskZsTKJ9fKk2t8NV7k0H5J8pj5ytrCkKwO50GueBXKRp7nxqhU/4fWwjOlGKvi7g924XffG9DzN3wcml0X8GibtrP1ynU5ZTKcHGcgCGREfCsBe3snzuYkBePkVnmR+JNYo8l7SppBKUKZeVjT/YaMKv6P9P2uYTi/qjNqzL+KmJdXIBOboVXffZI4QjOo8kYauYLf6Dv477DuVtJWF6m2dw92MAxQvC/Cwm9hl1iOuj5w6yYWU4gGiwBFkmPjv3AxfZiQHUSHBX1v8bnYDTDxp4dFnbo3TqYoim4+A9QyYKLT0RUNz0+mrjcP2+XyiTKMU7m3WGxGHgRmcfEGXxAuoFXK8ikf45n6YCSeF3e+eSp3467LvqZOkrzPwsAKpt5IeU6cutv0dBzlMTQ97Bw5Kv06iOr/XscPYHQhm2dRhUgh+LbocfyoBWBSUC2nVerNolO76AFaTBzg2SA2D2eAAox05eTegdGIC9ySt0pyaKJnrJc7Hc8dGnlddpJnP96nFfKK3HEqXWHouH4U1H9VrewUetnxlw4EWTm70DMaeanTwAYmrrl0Wc6jjUFNn6MiLM9GVN47zT9ojVUTkDpxJI+xPd7Or38zewNLb+Bqdn5L5kWj+EEobcNgk5rfJTof5qM8E=
