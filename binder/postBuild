@@ -4,8 +4,8 @@ make local-install
 make kernel-install
 make codemirror-install
 
-sudo apt-get install agda-mode
-sudo apt-get install agda-stdlib
+#sudo apt-get install agda-mode
+#sudo apt-get install agda-stdlib
 
 #pip install agda_kernel
 
