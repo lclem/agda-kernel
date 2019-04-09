@@ -4,3 +4,5 @@ make all
 make local-install
 make pip-install
 make kernel-install
+
+pip install agda_kernel
