@@ -13,10 +13,16 @@ Installation
     pip install agda_kernel
     python -m agda_kernel.install
 
+### Syntax highlighting
+
 Syntax highlighting is done separately by [Codemirror](https://codemirror.net/),
 but unfortunately there is no Agda mode packaged with it.
 A rudimentary Agda mode for Codemirror can be found in ``codemirror-agda/agda.js``.
-It needs to be manually installed inside Jupyter, as follows:
+In order to install it, either type
+
+    make codemirror-install
+    
+or follow the manual instructions below:
 Let `dir` be the result of executing the following command
 
     pip show notebook | grep Location | cut -d ' ' -f 2
