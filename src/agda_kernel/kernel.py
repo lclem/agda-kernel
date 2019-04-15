@@ -408,7 +408,10 @@ class AgdaKernel(Kernel):
             '::' : '∷',
             '0' : '𝟬', # '𝟢',
             '1' : '𝟭', # '𝟣'
-            '+' : "⨁"
+            '+' : '⨁',
+            '~' : '≈',
+            'x' : '×',
+            'o' : '∘'
         }
 
         other_half = {val : key for (key, val) in half_subst.items()}

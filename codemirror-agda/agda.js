@@ -25,19 +25,19 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
   var digitRE = /\d/;
   var hexitRE = /[0-9A-Fa-f]/;
   var octitRE = /[0-7]/;
-  var idRE = /[a-z_A-Z0-9'\xa1-\uffff]/;
+  var idRE = /[a-z_A-Z0-9'\xa1-\uffff\[\],]/;
   var symbolRE = /[-!#$%&*+.\/<=>?@\\^|~:]/;
   var specialRE = /[.();@{}]/;
   // ".", ";", "{", "}", "(", ")", "\"", "@")
   var whiteCharRE = /[ \t\v\f]/; // newlines are handled in tokenizer
 
-  // from agda-mode
+  // from agda-mode (UNUSED)
   //  ========================================================================================
   const floatRegex = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?(?=[.;{}()@"\s]|$)/u;
   const integerRegex = /-?(?:0|[1-9]\d*|0x[0-9A-Fa-f]+)(?=[.;{}()@"\s]|$)/u;
 
   const keywordsRegex = new RegExp(
-    "(?:[_=|→:?\\\\λ∀]|->|\\.{2,3}|abstract|codata|coinductive|constructor|" +
+    "(?:[_=|→:?\\\\λ∀]|->|\\.{2,3}|abstract|as|codata|coinductive|constructor|" +
       "data|do|eta-equality|field|forall|hiding|import|in|inductive|" +
       "infix|infixl|infixr|instance|let|macro|module|mutual|no-eta-equality|" +
       "open|overlap|pattern|postulate|primitive|private|public|quote|" +
@@ -214,7 +214,7 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
     // reserved keywords
     // those appear in bold green
     setType("keyword")(
-      "abstract", "codata", "coinductive", "constructor", "data", "do", "eta-equality",
+      "abstract", "as", "codata", "coinductive", "constructor", "data", "do", "eta-equality",
       "field", "forall", "hiding", "import", "in", "inductive", "infix", "infixl", "infixr", "instance",
       "let", "macro", "module", "mutual", "no-eta-equality", "open", "overlap",
       "pattern", "postulate", "primitive", "private", "public", "quote", "quoteContext", "quoteGoal", "quoteTerm",

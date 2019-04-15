@@ -20,7 +20,7 @@ local-install: build
 	# python -m pip install --force-reinstall dist/agda_kernel-0.3-py3-none-any.whl
 
 # run after the agda_kernel module is installed
-kernel-install: build
+kernel-install: local-install
 	python -m agda_kernel.install
 
 codemirror-install: codemirror-agda/agda.js
