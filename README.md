@@ -63,6 +63,12 @@ If the expression is just a literal, then the cursor should be inside, or in the
 by putting the cursor near the expression and hitting TAB.
 Expression localisation follows the same rules as in the previous point.
 
+Examples
+--------
+
+You can launch the following examples directly via the mybinder interface:
+- [examples/lab01.ipynb](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/lab01.ipynb)
+
 Editing
 -------
 
