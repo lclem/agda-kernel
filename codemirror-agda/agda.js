@@ -225,7 +225,7 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
     // builtin symbols
     // those appear in green
     setType("builtin")(
-      "Set", "{", "}", "=", "|", "->", "→", ":", "?", "\\", "λ", "∀", "..", "...", "(", ")");
+      "Set", "Set1", "Set2", "{", "}", "=", "|", "->", "→", ":", "?", "\\", "λ", "∀", "..", "...", "(", ")");
 
     var override = modeConfig.overrideKeywords;
     if (override) for (var word in override) if (override.hasOwnProperty(word))
