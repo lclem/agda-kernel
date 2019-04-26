@@ -8,12 +8,14 @@ import pexpect
 
 AGDA_STATUS_ACTION = "agda2-status-action"
 AGDA_INFO_ACTION = "agda2-info-action"
+AGDA_GIVE_ACTION = "agda2-give-action"
 
 AGDA_ERROR = "*Error*"
 AGDA_NORMAL_FORM = "*Normal Form*"
 AGDA_ALL_DONE = "*All Done*"
 AGDA_CHECKED = "Checked"
 AGDA_INFERRED_TYPE = "*Inferred Type*"
+AGDA_AUTO = "*Auto*"
 
 # return line and column of an position in a string
 def line_of(self, s, n):
@@ -236,6 +238,11 @@ class AgdaKernel(Kernel):
     def find_expression(self, code, cursor_pos):
 
         length = len(code)
+
+        # go one step left if we are at the end of the file
+        if cursor_pos == length:
+            cursor_pos -= 1
+        
         i = cursor_pos
 
         forbidden = [" ", "\n", "(", ")", "{", "}", ":"]
@@ -439,6 +446,8 @@ class AgdaKernel(Kernel):
             exp = escapify(exp_orig)
             cursor_start += 1
 
+            self.log.error(f'Considering expression: {exp}')
+
             if fileName != "" and exp != "":
 
                 if fileName in self.cells and self.cells[fileName] != "":
@@ -451,6 +460,29 @@ class AgdaKernel(Kernel):
 
                     if line1 == -1 or line2 == -1: # should not happen
                         result = "Internal error"
+                    elif exp == "?":
+
+                        absoluteFileName = os.path.abspath(fileName)
+
+                        # call Agsy!
+                        cmd = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect (Cmd_autoOne 0 (intervalsToRange (Just (mkAbsolute \"{absoluteFileName}\")) [Interval (Pn () {pos1+1} {line1+1} {column1+1}) (Pn () {pos2+1} {line2+1} {column2+1})]) \"\")'
+                        result = self.interact(cmd)
+
+                        info = result[AGDA_INFO_ACTION][0][0]
+
+                        self.log.error(f'INFO: {info}')
+                        #self.log.error(f'ANSWER: {answer}')
+
+
+#result: {'agda2-give-action': [['λ z → z (λ z₁ → z₁ (λ z₂ → z (λ _ → z₂)))']], 'agda2-status-action': [['']], 'agda2-info-action': [['*All Done*', '']]}
+#result: {'agda2-status-action': [['']], 'agda2-info-action': [['*Auto*', 'No solution found']]}
+
+                        if info == AGDA_ALL_DONE:
+                            result = result[AGDA_GIVE_ACTION][0][0]
+                        elif info == AGDA_AUTO:
+                            result = result[AGDA_INFO_ACTION][0][1]
+                        else:
+                            result = ""
                     else:
                         # send the normalisation command to Agda
                         cmd = f'IOTCM \"{fileName}\" None Indirect (Cmd_compute_toplevel DefaultCompute \"{exp}\")'
