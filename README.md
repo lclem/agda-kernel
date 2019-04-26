@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/lclem/agda-kernel.svg)](https://travis-ci.org/lclem/agda-kernel)
 [![Jupyter Notebook](https://img.shields.io/badge/jupyter-5.7.8-blue.svg)](https://github.com/jupyter/notebook/releases/tag/5.7.8)
 [![Agda](https://img.shields.io/badge/agda-2.6-blue.svg)](https://github.com/agda/agda/releases/tag/v2.6)
-[![agda-stdlib](https://img.shields.io/badge/agda--stdlib-0.17-blue.svg)](https://github.com/agda/agda-stdlib/releases/tag/v0.17)
+[![agda-stdlib](https://img.shields.io/badge/agda--stdlib-1.0.1-blue.svg)](https://github.com/agda/agda-stdlib/releases/tag/v1.0.1)
 
 # agda-kernel
 An experimental Agda kernel for Jupyter.
