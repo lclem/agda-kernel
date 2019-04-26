@@ -54,6 +54,9 @@ The result of typechecking the cell are then displayed.
 
 After a cell has been evaluated, one can
 
+- Run Agsy (auto) by putting the cursor next to a hole `?` and hitting TAB.
+The hole `?` is replaced by the result returned by Agsy.
+
 - Infer the type of a closed expression,
 by putting the cursor near the expression and hitting SHIFT-TAB.
 If the expression is in parentheses ``(...)``, then the cursor should be near one of the two parentheses.
