@@ -390,6 +390,9 @@ class AgdaKernel(Kernel):
     # triggered by SHIFT+TAB
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
+        # update with the current cell contents
+        self.do_execute(code, False)
+        
         cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
         cursor_start += 1
         
