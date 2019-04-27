@@ -16,6 +16,7 @@ install:
 script:
 - pip install .
 - make test
+- python -m pytest
 notifications:
   email: false
 after_script: cd ~
