@@ -1,5 +1,5 @@
 import pytest
-from src.agda_kernel.kernel import AgdaKernel
+from agda_kernel.kernel import AgdaKernel
 #import agda_kernel.kernel.findAllHoles
 
 @pytest.fixture
