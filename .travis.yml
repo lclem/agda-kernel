@@ -25,10 +25,10 @@ script:
 - make test
 - pytest
 - coverage xml src/tests/test_basic.py
-- coverage html src/tests/test_basic.py
+#- coverage html src/tests/test_basic.py
 
 after_script: 
-- cd ~
+#- cd ~
 
 # Push the results back to codecov
 after_success:
