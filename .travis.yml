@@ -23,8 +23,8 @@ before_script:
 script:
 - pip install .
 - make test
-- pytest
-- coverage xml src/tests/test_basic.py
+- pytest --cov
+#- coverage xml src/tests/test_basic.py
 #- coverage html src/tests/test_basic.py
 
 after_script: 
