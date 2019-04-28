@@ -24,7 +24,8 @@ script:
 - pip install .
 - make test
 - pytest
-- coverage run src/tests/test_basic.py
+- coverage xml src/tests/test_basic.py
+- coverage html src/tests/test_basic.py
 
 after_script: 
 - cd ~
