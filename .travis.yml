@@ -16,6 +16,7 @@ before_install:
 
 install:
 - pip install -r requirements.txt
+- pip install codecov pytest pytest-cov
 
 before_script:
 - export CODECOV_TOKEN="8569eb0e-1db5-42dd-adeb-046fd6247600"
@@ -23,8 +24,8 @@ before_script:
 script:
 - pip install .
 - make test
-- pytest
-- coverage xml src/tests/test_basic.py
+- pytest --cov
+#- coverage xml src/tests/test_basic.py
 #- coverage html src/tests/test_basic.py
 
 after_script: 
