@@ -121,3 +121,33 @@ def test_inComment_5(kernel):
 
 def test_inComment_6(kernel):
     assert kernel.inComment(commentCode, 46)
+
+def test_removeComments_0(kernel):
+    assert kernel.removeComments("hello -- comments\nhey") == "hello \nhey"
+
+def test_removeComments_1(kernel):
+    assert kernel.removeComments("hello -- comments {- {- \nhey{- oy{- hey-}-}go") == "hello \nheygo"
+
+def test_removeComments_2(kernel):
+    assert kernel.removeComments("a {- -- this comments ends earlier {- \nhey hey-}  -} line") == "a  line"
+
+def test_removeComments_3(kernel):
+    assert kernel.removeComments("a {- -- this comments ends earlier {- \nhey hey-}  -} -} line") == "a  -} line"
+
+def test_removeComments_4(kernel):
+    assert kernel.removeComments("a {- -- this comments ends earlier {- \nhey hey-}   line-}") == "a "
+
+def test_getModuleName_0(kernel):
+    assert kernel.getModuleName("module pippo where \n \n paperino and pluto") == "pippo"
+        
+def test_getModuleName_1(kernel):
+    assert kernel.getModuleName("\n \nmodule pippo where \n \n paperino and pluto") == "pippo"
+
+def test_getModuleName_2(kernel):
+    assert kernel.getModuleName("\n {-# PRAGMA bla bla  #-} \nmodule pippo where \n \n paperino and pluto") == "pippo"
+
+def test_getModuleName_3(kernel):
+    assert kernel.getModuleName("\n \n {-# PRAGMA bla bla  #-}\n {-module sandokan where-} \n -- module pluto where \nmodule pippo where \n \n paperino and pluto") == "pippo"
+
+def test_getModuleName_4(kernel):
+    assert kernel.getModuleName("module pippo where   \n") == "pippo"

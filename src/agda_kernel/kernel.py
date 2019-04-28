@@ -144,21 +144,20 @@ class AgdaKernel(Kernel):
 
     def getModuleName(self, code):
 
+        code = self.removeComments(code)
         lines = code.split('\n')
-        firstLine = lines[0]
 
-        if not bool(re.match(r'module *[a-zA-Z0-9.\-]* *where', firstLine)):
+        #look for the first line matching "module name where"
+        for line in lines:
+            if bool(re.match(r'module *[a-zA-Z0-9.\-]* *where', line)):
+                # fileName = "tmp/" + re.sub(r"-- *", "", firstLine)
+                moduleName = re.sub(r'module *', "", line)
+                moduleName = re.sub(r' *where *', "", moduleName)
+                moduleName = moduleName #[:-1] # apparently it produces an extra space at the end
 
-            return ""
+                return moduleName
 
-        else:
-
-            # fileName = "tmp/" + re.sub(r"-- *", "", firstLine)
-            moduleName = re.sub(r'module *', "", firstLine)
-            moduleName = re.sub(r' *where', "", moduleName)
-            moduleName = moduleName
-
-            return moduleName
+        return ""
 
     def getFileName(self, code):
 
@@ -392,7 +391,7 @@ class AgdaKernel(Kernel):
 
         # update with the current cell contents
         self.do_execute(code, False)
-        
+
         cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
         cursor_start += 1
         
@@ -434,6 +433,7 @@ class AgdaKernel(Kernel):
     def do_complete(self, code, cursor_pos):
 
         half_subst = {
+            'Nat' : 'ℕ',
             '<=<>' : '≤⟨⟩',
             '<==<>' : '≤≡⟨⟩',
             '=<>' : '≡⟨⟩',
@@ -548,7 +548,7 @@ class AgdaKernel(Kernel):
 
         return {'matches': sorted(matches), 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': {},
-            'status': 'ok' if not error else 'error' }
+            'status': 'ok' if not error else 'error'}
 
     def findAllHoles(self, code):
         i = 0
@@ -595,6 +595,32 @@ class AgdaKernel(Kernel):
             k += 1
 
         return -1 # no hole found
+
+    def removeComments(self, code):
+
+        level = 0
+        i = 0
+        length = len(code)
+        result = ""
+
+        while i < length:
+            if level == 0 and code[i:i+2] == "--": # skip till the end of the line
+                while i < length and code[i] != "\n":
+                    i += 1
+
+                result += "\n" if code[i:i+1] == "\n" else ""
+            elif code[i:i+2] == "{-":
+                level += 1
+                i += 1
+            elif code[i:i+2] == "-}" and level > 0:
+                level -= 1
+                i += 1
+            elif level == 0:
+                result += code[i]
+
+            i += 1
+
+        return result
 
 def escapify(s):
     # escape quotations, new lines

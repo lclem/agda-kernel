@@ -7,12 +7,16 @@ $(info CODEMIRROR-AGDA: $(CODEMIRROR-AGDA))
 
 all: build local-install codemirror-install # kernel-install
 
-test: build local-install kernel-install codemirror-install
+test: local-install
 	jupyter nbconvert --to notebook --execute example/example.ipynb  --output example-output.ipynb
+	
+pytest: local-install
+	pytest
 
 build: dist/agda_kernel-0.3-py3-none-any.whl
 
 dist/agda_kernel-0.3-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
+#	pylint src/agda_kernel/kernel.py
 	python setup.py bdist_wheel
 
 local-install: build
