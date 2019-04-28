@@ -1,2 +1,2 @@
 jupyter
-agda_kernel
+codecov
