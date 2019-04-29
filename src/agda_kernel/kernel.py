@@ -26,6 +26,7 @@ AGDA_CMD_INFER = "Cmd_infer"
 AGDA_CMD_INFER_TOPLEVEL = "Cmd_infer_toplevel"
 AGDA_CMD_GOAL_TYPE_CONTEXT_INFER = "Cmd_goal_type_context_infer"
 AGDA_CMD_AUTOONE = "Cmd_autoOne"
+AGDA_CMD_AUTO = "Cmd_auto"
 AGDA_CMD_COMPUTE = "Cmd_compute"
 AGDA_CMD_COMPUTE_TOPLEVEL = "Cmd_compute_toplevel"
 AGDA_CMD_REFINE_OR_INTRO = "Cmd_refine_or_intro"
@@ -35,7 +36,7 @@ class AgdaKernel(Kernel):
     implementation = 'agda'
     implementation_version = '0.3'
     language = 'agda'
-    language_version = '0.3'
+    language_version = '2.6'
     language_info = {
         'name': 'agda',
         'mimetype': 'text/agda',
@@ -44,6 +45,8 @@ class AgdaKernel(Kernel):
 
     banner = "Agda kernel"
     cells = {}
+
+    agda_version = ""
 
     '''
     _banner = None
@@ -68,6 +71,10 @@ class AgdaKernel(Kernel):
             self.firstTime = False
 
         return
+
+    def __init__(self, **kwargs):
+        Kernel.__init__(self, **kwargs)
+        self.agda_version = self.readAgdaVersion()
 
     # return line and column of an position in a string
     def line_of(self, s, n):
@@ -94,6 +101,16 @@ class AgdaKernel(Kernel):
             return i, n - j
         else:
             return -1, -1
+
+    def readAgdaVersion(self):
+        p = pexpect.spawn('agda --version')
+        p.expect(pexpect.EOF)
+        result = str(p.before)
+        tokens = result.split(" ")
+        version = tokens[2] # remove initial "Agda version "
+        version = version[:-5] # remove trailing "\r\n"
+        self.print(f'Detected Agda version: {version}')
+        return version
 
     def interact(self, cmd):
 
@@ -337,9 +354,9 @@ class AgdaKernel(Kernel):
             query= f'IOTCM "{absoluteFileName}\" None Indirect ({AGDA_CMD_INFER_TOPLEVEL} Simplified "{exp}")'
         elif cmd == AGDA_CMD_GOAL_TYPE_CONTEXT_INFER:
             query = f'IOTCM "{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_GOAL_TYPE_CONTEXT_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
-        elif cmd == AGDA_CMD_AUTOONE:
+        elif cmd in [AGDA_CMD_AUTO, AGDA_CMD_AUTOONE]:
             hints = exp #"" if exp == "?" else inside_exp
-            query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_AUTOONE} {interactionId} {intervalsToRange} "{hints}")'
+            query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({cmd} {interactionId} {intervalsToRange} "{hints}")'
         elif cmd == AGDA_CMD_COMPUTE:
             query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_COMPUTE} DefaultCompute {interactionId} {intervalsToRange} "{exp}")'
         elif cmd == AGDA_CMD_COMPUTE_TOPLEVEL:
@@ -535,7 +552,7 @@ class AgdaKernel(Kernel):
                     k += 1
                 """
                 options = "-m -l" # list solutions
-                result, error = self.runCmd(code, cursor_start, cursor_end, options, AGDA_CMD_AUTOONE)
+                result, error = self.runCmd(code, cursor_start, cursor_end, options, AGDA_CMD_AUTOONE if self.agda_version >= "2.5.4" else AGDA_CMD_AUTO)
                 self.print(f'result is: {result}, error is: {error}')
 
                 if result.find("Listing solution(s)") != -1:
