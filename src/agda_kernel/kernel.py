@@ -595,7 +595,7 @@ class AgdaKernel(Kernel):
            # the hole is not of the form "?"
            #if matches == []:
 
-        return {'matches': sorted(matches), 'cursor_start': cursor_start,
+        return {'matches': matches, 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': {},
             'status': 'ok' if not error else 'error'}
 
