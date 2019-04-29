@@ -337,7 +337,11 @@ class AgdaKernel(Kernel):
             row1, col1 = self.line_of(code, cursor_start)
             row2, col2 = self.line_of(code, cursor_end)
 
-            intervalsToRange = f'(intervalsToRange (Just (mkAbsolute "{absoluteFileName}")) [Interval (Pn () {cursor_start+1} {row1+1} {col1+1}) (Pn () {cursor_end+1} {row2+1} {col2+1})])'
+            if self.agda_version <= "2.5.1":
+                intervalsToRange = f'(Range [Interval (Pn (Just (mkAbsolute "{absoluteFileName}")) {cursor_start+1} {row1+1} {col1+1}) (Pn (Just (mkAbsolute "{absoluteFileName}")) {cursor_end+1} {row2+1} {col2+1})])'
+            else:
+                intervalsToRange = f'(intervalsToRange (Just (mkAbsolute "{absoluteFileName}")) [Interval (Pn () {cursor_start+1} {row1+1} {col1+1}) (Pn () {cursor_end+1} {row2+1} {col2+1})])'
+
             interactionId = self.findCurrentHole(code, cursor_start)
 
             if row1 == -1 or row2 == -1: # should not happen
