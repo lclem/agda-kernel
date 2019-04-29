@@ -77,7 +77,7 @@ Examples
 --------
 
 You can launch the following examples directly via the mybinder interface:
-- [examples/lab01.ipynb](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/lab01.ipynb)
+- [examples/Lab01.ipynb](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab01.ipynb)
 
 Editing
 -------
