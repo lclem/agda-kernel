@@ -85,7 +85,7 @@ class AgdaKernel(Kernel):
                 found = True
                 break
 
-            self.log.error(f'line {i} has length {len(line)}, cumulative {j}')
+            self.print(f'line {i} has length {len(line)}, cumulative {j}')
 
             i += 1
             j += len(line) + 1 # need to additionally record the '\n'
@@ -97,7 +97,7 @@ class AgdaKernel(Kernel):
 
     def interact(self, cmd):
 
-        self.log.error("Telling Agda: %s" % cmd)
+        self.print("Telling Agda: %s" % cmd)
         
         #cmd = cmd.encode() # create a byte representation
         #result = self.process.communicate(input=cmd)[0]
@@ -111,7 +111,7 @@ class AgdaKernel(Kernel):
         result = result[result.index('\n')+1:]
 
         #result = result.decode()
-        self.log.error(f'Agda replied: {result}')
+        self.print(f'Agda replied: {result}')
 
         lines = result.split('\n')
 
@@ -138,7 +138,7 @@ class AgdaKernel(Kernel):
                 # add the new values to the dictionary
                 result[key].append(values)
 
-        self.log.error("result: %s" % result)
+        self.print("result: %s" % result)
 
         return result
 
@@ -180,7 +180,7 @@ class AgdaKernel(Kernel):
         fileName = self.getFileName(code)
         dirName = self.getDirName(code)
 
-        self.log.error(f'detected fileName: {fileName}, dirName: {dirName}')
+        self.print(f'detected fileName: {fileName}, dirName: {dirName}')
         error = False
 
         if fileName == "":
@@ -225,7 +225,10 @@ class AgdaKernel(Kernel):
 
         if not silent or err != "":
             stream_content = {'name': 'stdout', 'text': result}
-            self.send_response(self.iopub_socket, 'stream', stream_content)
+            try:
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+            except AttributeError: # during testing there is no such method, just ignore
+                self.print("Ignoring call to self.send_response")
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
@@ -256,7 +259,7 @@ class AgdaKernel(Kernel):
 
         hole_left_found = code[hole_left : hole_left + 2] == "{!" and not self.inComment(code, hole_left)
 
-        self.log.error(f'found hole left? {hole_left_found}')
+        self.print(f'found hole left? {hole_left_found}')
 
         hole_right = cursor_pos - 2
         # go right until you find the beginning of a hole
@@ -265,21 +268,21 @@ class AgdaKernel(Kernel):
 
         hole_right_found = code[hole_right : hole_right + 2] == "!}" and not self.inComment(code, hole_right)
 
-        self.log.error(f'found hole right? {hole_right_found}')
+        self.print(f'found hole right? {hole_right_found}')
 
         # check if the cursor is inside a hole
         if hole_left_found and hole_right_found:
             start = hole_left
             end = hole_right + 2
             expression = code[start : end]
-            self.log.error(f'found hole left {start} and right {end}: token = {expression}')
+            self.print(f'found hole left {start} and right {end}: token = {expression}')
         else:
 
-            self.log.error(f'going for spaces')
+            self.print(f'going for spaces')
 
             start = cursor_pos
 
-            while start >= 1 and code[start - 1] not in forbidden:
+            while start >= 1 and code[start - 1:start] not in forbidden:
                 start -= 1
 
             end = cursor_pos
@@ -291,7 +294,7 @@ class AgdaKernel(Kernel):
 
         expression = escapify(expression)
              
-        self.log.error(f'considering expression: \"{expression}\"')
+        self.print(f'considering expression: \"{expression}\"')
         return start, end, expression
 
     def isHole(self, exp):
@@ -304,7 +307,7 @@ class AgdaKernel(Kernel):
         fileName = self.getFileName(code)
         absoluteFileName = os.path.abspath(fileName)
 
-        self.log.error(f"running command: {cmd}")
+        self.print(f"running command: {cmd}")
 
         if fileName == "":
             return "empty filename", True
@@ -335,7 +338,7 @@ class AgdaKernel(Kernel):
         elif cmd == AGDA_CMD_GOAL_TYPE_CONTEXT_INFER:
             query = f'IOTCM "{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_GOAL_TYPE_CONTEXT_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
         elif cmd == AGDA_CMD_AUTOONE:
-            hints = "" if exp == "?" else inside_exp
+            hints = exp #"" if exp == "?" else inside_exp
             query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_AUTOONE} {interactionId} {intervalsToRange} "{hints}")'
         elif cmd == AGDA_CMD_COMPUTE:
             query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_COMPUTE} DefaultCompute {interactionId} {intervalsToRange} "{exp}")'
@@ -365,7 +368,7 @@ class AgdaKernel(Kernel):
         elif info_action_type == AGDA_GOAL_TYPE_ETC:
             return info_action_message, False
         elif info_action_type == AGDA_AUTO:
-            return info_action_message, False
+            return info_action_message, True
         elif info_action_type == AGDA_NORMAL_FORM:
             return info_action_message, False
         elif info_action_type in [AGDA_ALL_DONE, AGDA_ALL_GOALS]:
@@ -376,7 +379,7 @@ class AgdaKernel(Kernel):
         elif AGDA_MAKE_CASE_ACTION in response: # in this case we need to parse Agda's response again
             case_list = response[AGDA_MAKE_CASE_ACTION][0]
             result = "\n".join(case_list)
-            self.log.error(f"Case list: {result}")
+            self.print(f"Case list: {result}")
             return result, False
         elif cmd == AGDA_CMD_LOAD:
             if AGDA_INFO_ACTION in response:
@@ -399,7 +402,7 @@ class AgdaKernel(Kernel):
 
             if exp != "?":
                 exp = exp[2:-2] # strip the initial "{!" and final "!}"
-                self.log.error(f'considering inside exp: {exp}')
+                self.print(f'considering inside exp: {exp}')
 
             result1, error1 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
             result2, error2 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
@@ -508,7 +511,6 @@ class AgdaKernel(Kernel):
         if matches == []:
 
             # load the current contents
-            #_, _ = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
             self.do_execute(code, False)
 
             cursor_start, cursor_end, exp_orig = self.find_expression(code, cursor_pos)
@@ -516,13 +518,39 @@ class AgdaKernel(Kernel):
             #cursor_start += 1
 
             if exp == "?":
-                # call Agsy to fill a "?"
-                result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_AUTOONE)
+                # call Agsy, options: -c (case splitting) -m (hints) -r (refine) -l (list) -s k (select result k)
+                """options = lambda k: f'  -m -s {k}  '
+                k = 0
+                while True:
+                    result, error = self.runCmd(code, cursor_start, cursor_end, options(k), AGDA_CMD_AUTOONE)
+                    self.log.error(f'result is: {result}, error is: {error}')
+                    if error or result in ["No solution found", "No candidate found", "Only 1 solution found", f'Only {k} solutions found']:
+                        if matches == []:
+                            matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
 
-                if result == "No solution found":
-                    matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
+                        break
+                    else:
+                        matches += [result] if result != "" else []
+
+                    k += 1
+                """
+                options = "-m -l" # list solutions
+                result, error = self.runCmd(code, cursor_start, cursor_end, options, AGDA_CMD_AUTOONE)
+                self.print(f'result is: {result}, error is: {error}')
+
+                if result.find("Listing solution(s)") != -1:
+                    # example: Listing solution(s) 20-29\n20  f (f a left left) y x\n21  f (f a right left) y x\n22  f (f a left right) y x\n23  f (f a right right) y x\n24  f (f a left left) x x\n25  f (f a right left) x x\n26  f (f a left right) x x\n27  f (f a right right) x x\n28  f a (f a y y) y\n29  f a (f a x y) y\n
+                    lines = result.split('\n')[1:-1] # skip the first and last lines
+                    for line in lines:
+                        tokens = line.split(' ') 
+                        self.print(f"line is: {line}, tokens is: {tokens}")
+                        solution = " ".join(tokens[2:]) # skip the first "20  " (plus the extra space!) and put the tokens back
+                        matches += [solution]
+                elif error or result in ["No solution found", "No candidate found"]:
+                     matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
                 else:
-                    matches = [result] if result != "" else []
+                    self.print(f'Unexpected answer: {result}, error is: {error}')
+                
             elif self.isHole(exp):
 
                 result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_REFINE_OR_INTRO)
@@ -577,16 +605,13 @@ class AgdaKernel(Kernel):
             else:
                 i += 1
 
-        if not __debug__: # do not call when pytesting
-            self.log.error(f'found holes: {holes}')
+        self.print(f'found holes: {holes}')
         return holes
 
     def findCurrentHole(self, code, pos):
 
         holes = self.findAllHoles(code)
-
-        if not __debug__:
-            self.log.error(f'looking for hole at position: {pos}')
+        self.print(f'looking for hole at position: {pos}')
 
         k = 0
         for (i, j) in holes:
@@ -621,6 +646,12 @@ class AgdaKernel(Kernel):
             i += 1
 
         return result
+
+    def print(self, msg):
+        try:
+            self.log.error(msg)
+        except AttributeError:
+            print(msg)
 
 def escapify(s):
     # escape quotations, new lines

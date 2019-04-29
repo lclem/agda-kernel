@@ -6,5 +6,11 @@ __pycache__/
 /MANIFEST
 .DS_Store
 agda_kernel.egg-info/
-example/example-output.ipynb
+example/*-output.ipynb
 example/*.agda
+example/ignore/*
+example/.ipynb_checkpoints
+example/lab*
+htmlcov
+.coverage
+test.agda

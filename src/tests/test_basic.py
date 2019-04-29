@@ -151,3 +151,6 @@ def test_getModuleName_3(kernel):
 
 def test_getModuleName_4(kernel):
     assert kernel.getModuleName("module pippo where   \n") == "pippo"
+
+def test_auto_all_results(kernel):
+    assert kernel.do_complete("module test where\nh : {A : Set} → A → A → A\nh x y = ?", 52)['matches'] == ["x", "y"]
