@@ -35,6 +35,8 @@ after_script:
 # Push the results back to codecov
 after_success:
   - codecov
+  # attempt to update mybinder
+  - wget https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab01.ipynb
 
 deploy:
   provider: pypi
