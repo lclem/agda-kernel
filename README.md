@@ -23,7 +23,7 @@ In order to install it, either type
 
     make codemirror-install
     
-or follow the manual instructions below:
+<!-- or follow the manual instructions below:
 Let `dir` be the result of executing the following command
 
     pip show notebook | grep Location | cut -d ' ' -f 2
@@ -35,11 +35,12 @@ Then,
 
     mkdir -p dir/notebook/static/components/codemirror/mode/agda
     cp codemirror-agda/agda.js dir/notebook/static/components/codemirror/mode/agda
+-->
 
 Functionality
 -------------
 
-Each code cell must begin with a line of the  form ``module A.B.C where``.
+Each code cell must contain with a line of the form ``module A.B.C where``.
 For instance:
 
 ```agda
@@ -51,21 +52,26 @@ id x = x
 
 Upon execution, the file `A/B/C.agda` is created containing the cell's contents,
 and it is fed to the Agda interpreter (via `agda --interaction`).
-The result of typechecking the cell are then displayed.
+The results of typechecking the cell are then displayed.
 
 After a cell has been evaluated, one can
 
-- Run Agsy (auto) by putting the cursor next to a hole `?` and hitting TAB.
-The hole `?` is replaced by the result returned by Agsy.
+- Run Agsy (auto) by putting the cursor next to a goal `?` and hitting TAB.
+The hole `?` is replaced by the result returned by Agsy, if any,
+or by `{! !}` if no result was found.
+If there is more than one result, the first ten of them are presented for the user to choose from.
 
-- Infer the type of a closed expression,
-by putting the cursor near the expression and hitting SHIFT-TAB.
-If the expression is in parentheses ``(...)``, then the cursor should be near one of the two parentheses.
+- Refine the current goal by putting the cursor next to a goal `{! !}` and hitting TAB.
+An optional variable can be provided for case-splitting `{! m !}`.
+
+- Infer the type of a goal/literal, but putting the cursor near a goal/literal and hitting SHIFT-TAB.
+<!--If the expression is in parentheses ``(...)``, then the cursor should be near one of the two parentheses.
 If the expression is just a literal, then the cursor should be inside, or in the vicinity of the literal.
 
 - Normalise a closed expression,
 by putting the cursor near the expression and hitting TAB.
 Expression localisation follows the same rules as in the previous point.
+-->
 
 Examples
 --------
