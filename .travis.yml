@@ -20,6 +20,7 @@ install:
 
 before_script:
 - export CODECOV_TOKEN="8569eb0e-1db5-42dd-adeb-046fd6247600"
+- agda --version
 
 script:
 - pip install .
