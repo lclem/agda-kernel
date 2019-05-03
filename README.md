@@ -19,7 +19,7 @@ Installation
 Syntax highlighting is done separately by [Codemirror](https://codemirror.net/),
 but unfortunately there is no Agda mode packaged with it.
 A rudimentary Agda mode for Codemirror can be found in ``codemirror-agda/agda.js``.
-In order to install it, either type
+In order to install it, type
 
     make codemirror-install
     
