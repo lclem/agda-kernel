@@ -7,9 +7,8 @@ __pycache__/
 .DS_Store
 agda_kernel.egg-info/
 example/*-output.ipynb
-example/*.agda
 example/ignore/*
 example/.ipynb_checkpoints
 htmlcov
 .coverage
-test.agda
+*.agda
