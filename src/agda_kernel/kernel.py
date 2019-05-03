@@ -378,10 +378,20 @@ class AgdaKernel(Kernel):
 
         if AGDA_INFO_ACTION in response:
             info_action_type, info_action_message = response[AGDA_INFO_ACTION][0][0], deescapify(response[AGDA_INFO_ACTION][0][1])
+            info_action_types = [item[0] for item in response[AGDA_INFO_ACTION]]
         else:
             info_action_type, info_action_message = "", ""
 
-        if info_action_type == AGDA_ERROR:
+        if AGDA_INFO_ACTION in response and AGDA_ALL_DONE in info_action_types:
+            return "OK", False
+        elif AGDA_INFO_ACTION in response and AGDA_ALL_GOALS in info_action_types:
+            #if AGDA_GIVE_ACTION in response:
+            #    result = response[AGDA_GIVE_ACTION][0]
+            #    if len(result) > 0:
+            #        return result[0], False
+            goals = "".join([item[1] if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
+            return goals, False
+        elif info_action_type == AGDA_ERROR:
             return f'ERROR: {info_action_message}', True
         elif info_action_type == AGDA_INFERRED_TYPE:
             inferred_type = info_action_message
@@ -392,11 +402,6 @@ class AgdaKernel(Kernel):
             return info_action_message, True
         elif info_action_type == AGDA_NORMAL_FORM:
             return info_action_message, False
-        elif info_action_type in [AGDA_ALL_DONE, AGDA_ALL_GOALS]:
-            if AGDA_GIVE_ACTION in response:
-                result = response[AGDA_GIVE_ACTION][0]
-                if len(result) > 0:
-                    return result[0], False
         elif AGDA_MAKE_CASE_ACTION in response: # in this case we need to parse Agda's response again
             case_list = response[AGDA_MAKE_CASE_ACTION][0]
             result = "\n".join(case_list)
@@ -429,10 +434,14 @@ class AgdaKernel(Kernel):
             result2, error2 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
             result3, error3 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
 
-            result = result1 + "\n===========\nInfer: " + result2 + "\n===========\nCompute: " + result3
-            error = error1 or error2 or error3
         else:
-            result, error = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+
+            result1, error1 = "", False
+            result2, error2 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+            result3, error3 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+
+        result = result1 + "\n===========\nInfer: " + result2 + "\n===========\nCompute: " + result3
+        error = error1 or error2 or error3
 
         data = {}
         
@@ -482,6 +491,7 @@ class AgdaKernel(Kernel):
             'R' : 'ℝ',
             'Z' : 'ℤ',
             '/=' : '≢',
+            'leq' : '≤',
             '<=' : '≤',
             '=' : '≡',
             '[=' : '⊑',
