@@ -34,7 +34,7 @@ AGDA_CMD_MAKE_CASE = "Cmd_make_case"
 
 class AgdaKernel(Kernel):
     implementation = 'agda'
-    implementation_version = '0.3'
+    implementation_version = '0.4'
     language = 'agda'
     language_version = '2.6'
     language_info = {

@@ -13,15 +13,15 @@ test: build local-install kernel-install codemirror-install
 pytest: local-install
 	pytest
 
-build: dist/agda_kernel-0.3-py3-none-any.whl
+build: dist/agda_kernel-0.4-py3-none-any.whl
 
-dist/agda_kernel-0.3-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
+dist/agda_kernel-0.4-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
 #	pylint src/agda_kernel/kernel.py
 	python setup.py bdist_wheel
 
 local-install: build
 	pip install .
-	python -m pip install --force-reinstall dist/agda_kernel-0.3-py3-none-any.whl
+	python -m pip install --force-reinstall dist/agda_kernel-0.4-py3-none-any.whl
 
 # run after the agda_kernel module is installed
 kernel-install: local-install
