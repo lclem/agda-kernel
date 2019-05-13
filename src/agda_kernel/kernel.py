@@ -516,7 +516,8 @@ class AgdaKernel(Kernel):
             'o' : '∘',
             'phi' : 'φ',
             'psi' : 'ψ',
-            '??' : "{! !}"
+            '??' : "{! !}",
+            'iff' : '⟺'
         }
 
         other_half = {val : key for (key, val) in half_subst.items()}
