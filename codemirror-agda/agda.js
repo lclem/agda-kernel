@@ -31,6 +31,7 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
   // ".", ";", "{", "}", "(", ")", "\"", "@")
   var whiteCharRE = /[ \t\v\f]/; // newlines are handled in tokenizer
 
+  /*
   // from agda-mode (UNUSED)
   //  ========================================================================================
   const floatRegex = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?(?=[.;{}()@"\s]|$)/u;
@@ -57,6 +58,7 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
     "u"
   );
   //  ========================================================================================
+  */
 
   function normal(source, setState) {
     if (source.eatWhile(whiteCharRE)) {
@@ -214,7 +216,7 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
     // reserved keywords
     // those appear in bold green
     setType("keyword")(
-      "abstract", "as", "codata", "coinductive", "constructor", "data", "do", "eta-equality",
+      "abstract", /*"as",*/ "codata", "coinductive", "constructor", "data", "do", "eta-equality",
       "field", "forall", "hiding", "import", "in", "inductive", "infix", "infixl", "infixr", "instance",
       "let", "macro", "module", "mutual", "no-eta-equality", "open", "overlap",
       "pattern", "postulate", "primitive", "private", "public", "quote", "quoteContext", "quoteGoal", "quoteTerm",
