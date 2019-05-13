@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python
 #  - numpy
-pip:
-  - git+https://github.com/lclem/jupyter_contrib_nbextensions
+  - pip
+  - pip:
+    - git+https://github.com/lclem/jupyter_contrib_nbextensions
 #    - agda_kernel
