@@ -92,7 +92,7 @@ class AgdaKernel(Kernel):
                 found = True
                 break
 
-            self.print(f'line {i} has length {len(line)}, cumulative {j}')
+            # self.print(f'line {i} has length {len(line)}, cumulative {j}')
 
             i += 1
             j += len(line) + 1 # need to additionally record the '\n'
@@ -397,6 +397,7 @@ class AgdaKernel(Kernel):
             inferred_type = info_action_message
             return f'{exp} : {inferred_type}', False # if inferred_type != "" else str(response)
         elif info_action_type == AGDA_GOAL_TYPE_ETC:
+            #self.print(f'info_action_message: {info_action_message}')
             return info_action_message, False
         elif info_action_type == AGDA_AUTO:
             return info_action_message, True
@@ -517,7 +518,9 @@ class AgdaKernel(Kernel):
             'phi' : 'φ',
             'psi' : 'ψ',
             '??' : "{! !}",
-            'iff' : '⟺'
+            'iff' : '⟺',
+            'w'  : 'ω ',
+            'omega' : 'ω'
         }
 
         other_half = {val : key for (key, val) in half_subst.items()}
