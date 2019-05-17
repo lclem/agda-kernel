@@ -37,7 +37,8 @@ after_success:
   - codecov
   # attempt to update mybinder
   #- wget https://mybinder.org/v2/gh/lclem/agda-kernel/master
-  - chmod a+x ./trigger_mybinder.sh && ./trigger_mybinder.sh
+  # - chmod a+x ./trigger_mybinder.sh && ./trigger_mybinder.sh
+  - ( printf "q"; sleep 10 ) | links https://mybinder.org/v2/gh/lclem/agda-kernel/master
   
 deploy:
   provider: pypi
