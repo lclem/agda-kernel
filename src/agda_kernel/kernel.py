@@ -382,27 +382,29 @@ class AgdaKernel(Kernel):
         else:
             info_action_type, info_action_message = "", ""
 
-        if AGDA_INFO_ACTION in response and AGDA_ALL_DONE in info_action_types:
-            return "OK", False
-        elif AGDA_INFO_ACTION in response and AGDA_ALL_GOALS in info_action_types:
-            #if AGDA_GIVE_ACTION in response:
-            #    result = response[AGDA_GIVE_ACTION][0]
-            #    if len(result) > 0:
-            #        return result[0], False
-            goals = "".join([item[1] if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
-            return goals, False
-        elif info_action_type == AGDA_ERROR:
-            return f'ERROR: {info_action_message}', True
-        elif info_action_type == AGDA_INFERRED_TYPE:
-            inferred_type = info_action_message
-            return f'{exp} : {inferred_type}', False # if inferred_type != "" else str(response)
-        elif info_action_type == AGDA_GOAL_TYPE_ETC:
-            #self.print(f'info_action_message: {info_action_message}')
-            return info_action_message, False
-        elif info_action_type == AGDA_AUTO:
-            return info_action_message, True
-        elif info_action_type == AGDA_NORMAL_FORM:
-            return info_action_message, False
+        if AGDA_INFO_ACTION in response:
+            if AGDA_ALL_DONE in info_action_types:
+                return "OK", False
+            elif AGDA_ALL_GOALS in info_action_types:
+                #if AGDA_GIVE_ACTION in response:
+                #    result = response[AGDA_GIVE_ACTION][0]
+                #    if len(result) > 0:
+                #        return result[0], False
+                goals = "".join([item[1] if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
+                return goals, False
+            elif AGDA_ERROR in info_action_types:
+                info_action_message = "".join([item[1] if item[0] == AGDA_ERROR else "" for item in response[AGDA_INFO_ACTION]])
+                return f'{AGDA_ERROR}: {info_action_message}', True
+            elif AGDA_INFERRED_TYPE in info_action_types:
+                inferred_type = info_action_message
+                return f'{exp} : {inferred_type}', False # if inferred_type != "" else str(response)
+            elif AGDA_GOAL_TYPE_ETC in info_action_types:
+                #self.print(f'info_action_message: {info_action_message}')
+                return info_action_message, False
+            elif AGDA_AUTO in info_action_types:
+                return info_action_message, True
+            elif AGDA_NORMAL_FORM in info_action_types:
+                return info_action_message, False
         elif AGDA_MAKE_CASE_ACTION in response: # in this case we need to parse Agda's response again
             case_list = response[AGDA_MAKE_CASE_ACTION][0]
             result = "\n".join(case_list)
