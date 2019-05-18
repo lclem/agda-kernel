@@ -14,7 +14,9 @@ AGDA_MAKE_CASE_ACTION = "agda2-make-case-action"
 AGDA_ERROR = "*Error*"
 AGDA_NORMAL_FORM = "*Normal Form*"
 AGDA_ALL_DONE = "*All Done*"
+AGDA_ALL_ERRORS = "*All Errors*"
 AGDA_ALL_GOALS = "*All Goals*"
+AGDA_ALL_GOALS_ERRORS = "*All Goals, Errors*"
 AGDA_GOAL_TYPE_ETC = "*Goal type etc.*"
 AGDA_CHECKED = "Checked"
 AGDA_INFERRED_TYPE = "*Inferred Type*"
@@ -201,7 +203,7 @@ class AgdaKernel(Kernel):
         error = False
 
         if fileName == "":
-            err = "Error: the first line of the cell should be in the format \"module [modulename] where\""
+            err = "Error: the beginning of the cell should contain a line in the format \"module [modulename] where\""
             result = err
         else:
             #self.log.error("file: %s" % fileName)
@@ -395,6 +397,12 @@ class AgdaKernel(Kernel):
             elif AGDA_ERROR in info_action_types:
                 info_action_message = "".join([item[1] if item[0] == AGDA_ERROR else "" for item in response[AGDA_INFO_ACTION]])
                 return f'{AGDA_ERROR}: {info_action_message}', True
+            elif AGDA_ALL_GOALS_ERRORS in info_action_types:
+                info_action_message = "".join([item[1] if item[0] == AGDA_ALL_GOALS_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+                return f'{AGDA_ALL_GOALS_ERRORS}: {info_action_message}', True
+            elif AGDA_ALL_ERRORS in info_action_types:
+                info_action_message = "".join([item[1] if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+                return f'{AGDA_ALL_ERRORS}: {info_action_message}', True
             elif AGDA_INFERRED_TYPE in info_action_types:
                 inferred_type = info_action_message
                 return f'{exp} : {inferred_type}', False # if inferred_type != "" else str(response)
