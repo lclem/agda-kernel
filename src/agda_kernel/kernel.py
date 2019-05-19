@@ -198,20 +198,20 @@ class AgdaKernel(Kernel):
         fileName = self.getFileName(code)
         dirName = self.getDirName(code)
 
-        self.print(f'detected fileName: {fileName}, dirName: {dirName}')
+        self.print(f'detected fileName: {fileName}, dirName: {dirName}, while parsing: {code}')
         error = False
 
+        lines = code.split('\n')
+        numLines = len(lines)
+
         if fileName == "":
-            err = "Error: the beginning of the cell should contain a line in the format \"module [modulename] where\""
+            err = f"*Error*: ???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
             result = err
         else:
             #self.log.error("file: %s" % fileName)
 
             if dirName != "" and not os.path.exists(dirName):
                 os.makedirs(dirName)
-
-            lines = code.split('\n')
-            numLines = len(lines)
 
             fileHandle = open(fileName, "w+")
 
