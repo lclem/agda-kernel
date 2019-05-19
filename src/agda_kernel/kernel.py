@@ -362,23 +362,23 @@ class AgdaKernel(Kernel):
         if cmd == AGDA_CMD_LOAD:
             query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect (Cmd_load "{absoluteFileName}" [])'
         elif cmd == AGDA_CMD_INFER:
-            query = f'IOTCM "{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
         elif cmd == AGDA_CMD_INFER_TOPLEVEL:
-            query = f'IOTCM "{absoluteFileName}\" None Indirect ({AGDA_CMD_INFER_TOPLEVEL} Simplified "{exp}")'
+            query = f'IOTCM "{absoluteFileName}" None Indirect ({AGDA_CMD_INFER_TOPLEVEL} Simplified "{exp}")'
         elif cmd == AGDA_CMD_GOAL_TYPE_CONTEXT_INFER:
-            query = f'IOTCM "{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_GOAL_TYPE_CONTEXT_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_GOAL_TYPE_CONTEXT_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
         elif cmd in [AGDA_CMD_AUTO, AGDA_CMD_AUTOONE]:
             hints = exp #"" if exp == "?" else inside_exp
-            query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({cmd} {interactionId} {intervalsToRange} "{hints}")'
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({cmd} {interactionId} {intervalsToRange} "{hints}")'
         elif cmd == AGDA_CMD_COMPUTE:
-            query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_COMPUTE} DefaultCompute {interactionId} {intervalsToRange} "{exp}")'
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_COMPUTE} DefaultCompute {interactionId} {intervalsToRange} "{exp}")'
         elif cmd == AGDA_CMD_COMPUTE_TOPLEVEL:
-            query = f'IOTCM \"{absoluteFileName}\" None Indirect ({AGDA_CMD_COMPUTE_TOPLEVEL} DefaultCompute "{exp}")'
+            query = f'IOTCM "{absoluteFileName}" None Indirect ({AGDA_CMD_COMPUTE_TOPLEVEL} DefaultCompute "{exp}")'
         elif cmd == AGDA_CMD_REFINE_OR_INTRO:
             flag = "False" # "True" if the goal has functional type
-            query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_REFINE_OR_INTRO} {flag} {interactionId} {intervalsToRange} "{inside_exp}")'
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_REFINE_OR_INTRO} {flag} {interactionId} {intervalsToRange} "{inside_exp}")'
         elif cmd == AGDA_CMD_MAKE_CASE:
-            query = f'IOTCM \"{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_MAKE_CASE} {interactionId} {intervalsToRange} "{inside_exp}")'
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_MAKE_CASE} {interactionId} {intervalsToRange} "{inside_exp}")'
         else:
             return f"Unrecognised command: {cmd}", True
         
