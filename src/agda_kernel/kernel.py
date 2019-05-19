@@ -17,11 +17,14 @@ AGDA_ALL_DONE = "*All Done*"
 AGDA_ALL_ERRORS = "*All Errors*"
 AGDA_ALL_GOALS = "*All Goals*"
 AGDA_ALL_GOALS_ERRORS = "*All Goals, Errors*"
+AGDA_ALL_WARNINGS = "*All Warnings*"
 AGDA_GOAL_TYPE_ETC = "*Goal type etc.*"
 AGDA_CHECKED = "Checked"
 AGDA_INFERRED_TYPE = "*Inferred Type*"
 AGDA_AUTO = "*Auto*"
 AGDA_TYPECHECKING = "*Type-checking*"
+
+AGDA_ERROR_LIKE = [AGDA_ERROR, AGDA_ALL_ERRORS, AGDA_ALL_GOALS, AGDA_ALL_GOALS_ERRORS, AGDA_ALL_WARNINGS]
 
 AGDA_CMD_LOAD = "Cmd_load"
 AGDA_CMD_INFER = "Cmd_infer"
@@ -205,7 +208,7 @@ class AgdaKernel(Kernel):
         numLines = len(lines)
 
         if fileName == "":
-            err = f"*Error*: ???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
+            err = f"*Error*: /???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
             result = err
         else:
             #self.log.error("file: %s" % fileName)
@@ -401,8 +404,8 @@ class AgdaKernel(Kernel):
                         return result[0], False
                 goals = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
                 return goals, False
-            elif AGDA_ERROR in info_action_types:
-                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ERROR else "" for item in response[AGDA_INFO_ACTION]])
+            elif any(x in AGDA_ERROR_LIKE for x in info_action_types):
+                info_action_message = "".join([f"{item[0]}: {deescapify(item[1])}" if item[0] in AGDA_ERROR_LIKE else "" for item in response[AGDA_INFO_ACTION]])
 
                 # error recovery: if there is a string "did you mean 'new_exp'?",
                 # then call again with new_exp
@@ -413,13 +416,17 @@ class AgdaKernel(Kernel):
                     self.log.error(f'trying error recovery with new expression: {new_exp}')
                     return self.runCmd(code, cursor_start, cursor_end, new_exp, cmd)
                 else:
-                    return f'{AGDA_ERROR}: {info_action_message}', True
-            elif AGDA_ALL_GOALS_ERRORS in info_action_types:
-                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
-                return f'{AGDA_ALL_GOALS_ERRORS}: {info_action_message}', True
-            elif AGDA_ALL_ERRORS in info_action_types:
-                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
-                return f'{AGDA_ALL_ERRORS}: {info_action_message}', True
+                    #return f'{AGDA_ERROR}: {info_action_message}', True
+                    return info_action_message, True
+#            elif AGDA_ALL_GOALS_ERRORS in info_action_types:
+#                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+#                return f'{AGDA_ALL_GOALS_ERRORS}: {info_action_message}', True
+#            elif AGDA_ALL_ERRORS in info_action_types:
+#                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+#                return f'{AGDA_ALL_ERRORS}: {info_action_message}', True
+#            elif AGDA_ALL_ERRORS in info_action_types:
+#                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+#                return f'{AGDA_ALL_ERRORS}: {info_action_message}', True               
             elif AGDA_INFERRED_TYPE in info_action_types:
                 inferred_type = info_action_message
                 return f'{inferred_type}', False # if inferred_type != "" else str(response)
@@ -456,7 +463,7 @@ class AgdaKernel(Kernel):
             result = "must load the cell first"
         else:
 
-            self.log.error(f'cursor_pos: {cursor_pos}, len selection: {len(code)}, len code: {len(self.code)}')
+            self.log.error(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
 
             #we are in a selection
             if len(code) < len(self.code):
