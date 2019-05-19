@@ -172,7 +172,6 @@ class AgdaKernel(Kernel):
                 # fileName = "tmp/" + re.sub(r"-- *", "", firstLine)
                 moduleName = re.sub(r'module *', "", line)
                 moduleName = re.sub(r' *where *', "", moduleName)
-                moduleName = moduleName #[:-1] # apparently it produces an extra space at the end
 
                 return moduleName
 
@@ -321,7 +320,12 @@ class AgdaKernel(Kernel):
 
     def isHole(self, exp):
         result = exp == "?" or re.search("\\{!.*!\\}", exp) != None
-        #self.log.error(f'the expression "{exp}" is a hole? {result}')
+
+        try:
+            self.log.error(f'the expression "{exp}" is a hole? {result}')
+        except AttributeError: # during testing there is no such method, just ignore
+            self.print("Ignoring call to self.send_response")
+
         return result
 
     def runCmd(self, code, cursor_start, cursor_end, exp, cmd):
@@ -360,7 +364,7 @@ class AgdaKernel(Kernel):
         elif cmd == AGDA_CMD_INFER:
             query = f'IOTCM "{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
         elif cmd == AGDA_CMD_INFER_TOPLEVEL:
-            query= f'IOTCM "{absoluteFileName}\" None Indirect ({AGDA_CMD_INFER_TOPLEVEL} Simplified "{exp}")'
+            query = f'IOTCM "{absoluteFileName}\" None Indirect ({AGDA_CMD_INFER_TOPLEVEL} Simplified "{exp}")'
         elif cmd == AGDA_CMD_GOAL_TYPE_CONTEXT_INFER:
             query = f'IOTCM "{absoluteFileName}\" NonInteractive Indirect ({AGDA_CMD_GOAL_TYPE_CONTEXT_INFER} Simplified {interactionId} {intervalsToRange} "{exp}")'
         elif cmd in [AGDA_CMD_AUTO, AGDA_CMD_AUTOONE]:
@@ -391,29 +395,39 @@ class AgdaKernel(Kernel):
             if AGDA_ALL_DONE in info_action_types:
                 return "OK", False
             elif AGDA_ALL_GOALS in info_action_types:
-                #if AGDA_GIVE_ACTION in response:
-                #    result = response[AGDA_GIVE_ACTION][0]
-                #    if len(result) > 0:
-                #        return result[0], False
-                goals = "".join([item[1] if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
+                if AGDA_GIVE_ACTION in response: # if there is a give action, it has priority
+                    result = response[AGDA_GIVE_ACTION][0]
+                    if len(result) > 0:
+                        return result[0], False
+                goals = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
                 return goals, False
             elif AGDA_ERROR in info_action_types:
-                info_action_message = "".join([item[1] if item[0] == AGDA_ERROR else "" for item in response[AGDA_INFO_ACTION]])
-                return f'{AGDA_ERROR}: {info_action_message}', True
+                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ERROR else "" for item in response[AGDA_INFO_ACTION]])
+
+                # error recovery: if there is a string "did you mean 'new_exp'?",
+                # then call again with new_exp
+                matches = re.findall(r'did you mean \'([^\']*)\'\?', info_action_message)
+
+                if len(matches) > 0:
+                    new_exp = matches[0]
+                    self.log.error(f'trying error recovery with new expression: {new_exp}')
+                    return self.runCmd(code, cursor_start, cursor_end, new_exp, cmd)
+                else:
+                    return f'{AGDA_ERROR}: {info_action_message}', True
             elif AGDA_ALL_GOALS_ERRORS in info_action_types:
-                info_action_message = "".join([item[1] if item[0] == AGDA_ALL_GOALS_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
                 return f'{AGDA_ALL_GOALS_ERRORS}: {info_action_message}', True
             elif AGDA_ALL_ERRORS in info_action_types:
-                info_action_message = "".join([item[1] if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
+                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
                 return f'{AGDA_ALL_ERRORS}: {info_action_message}', True
             elif AGDA_INFERRED_TYPE in info_action_types:
                 inferred_type = info_action_message
-                return f'{exp} : {inferred_type}', False # if inferred_type != "" else str(response)
+                return f'{inferred_type}', False # if inferred_type != "" else str(response)
             elif AGDA_GOAL_TYPE_ETC in info_action_types:
                 #self.print(f'info_action_message: {info_action_message}')
                 return info_action_message, False
             elif AGDA_AUTO in info_action_types:
-                return info_action_message, True
+                return info_action_message, False
             elif AGDA_NORMAL_FORM in info_action_types:
                 return info_action_message, False
         elif AGDA_MAKE_CASE_ACTION in response: # in this case we need to parse Agda's response again
@@ -442,42 +456,67 @@ class AgdaKernel(Kernel):
             result = "must load the cell first"
         else:
 
-            # we are in a selection and the cursor is at the beginning of the selection
-            if cursor_pos + len(code) < len(self.code) and self.code[cursor_pos:cursor_pos+len(code)] == code:
-                cursor_start, cursor_end, exp = cursor_pos, cursor_pos + len(code), code
-            # we are in a selection and the cursor is at the end of the selection
-            elif cursor_pos - len(code) >= 0 and cursor_pos < len(self.code) and self.code[cursor_pos-len(code):cursor_pos] == code:
-                cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
+            self.log.error(f'cursor_pos: {cursor_pos}, len selection: {len(code)}, len code: {len(self.code)}')
+
+            #we are in a selection
+            if len(code) < len(self.code):
+                # we are in a selection and the cursor is at the beginning of the selection
+                if  cursor_pos + len(code) <= len(self.code) and self.code[cursor_pos:cursor_pos+len(code)] == code:
+                    self.log.error(f'we are in a selected text, cursor at the beginning')
+                    cursor_start, cursor_end, exp = cursor_pos, cursor_pos + len(code), code
+                # we are in a selection and the cursor is at the end of the selection
+                elif cursor_pos - len(code) >= 0 and cursor_pos <= len(self.code) and self.code[cursor_pos-len(code):cursor_pos] == code:
+                    self.log.error(f'we are in a selected text, cursor at the end')
+                    cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
+                else:
+                    self.log.error(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
             # we are not in a selection
             else:
-                cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
+                cursor_start, cursor_end, exp = self.find_expression(self.code, cursor_pos)
                 cursor_start += 1
             
             self.log.error(f'considering code: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
 
-            if(self.isHole(exp)):
-
+            if self.isHole(exp):
                 if exp != "?":
                     exp = exp[2:-2] # strip the initial "{!" and final "!}"
                     self.log.debug(f'considering inside exp: {exp}')
 
-                result1, error1 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
-                result2, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
-                result3, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
+                goal, error1 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
+                inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
+                normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
 
             else:
+                goal, error1 = "", False
+                inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+                normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
 
-                result1, error1 = "", False
-                result2, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
-                result3, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+            result = ""
 
-            result = result1 + "\n===========\nInfer: " + result2 + "\n===========\nCompute: " + result3
-            error = error1 or error2 or error3
+            self.log.error(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
+
+
+            if not error2 and not error3:
+                normalisation = f"{exp.strip()} = {normal_form.strip()} : {inferred_type.strip()}"
+            elif not error2:
+                normalisation = f"{exp.strip()} : {inferred_type.strip()}"
+            elif not error3:
+                normalisation = f"{exp.strip()} = {normal_form.strip()}"
+            else:
+                normalisation = ""
+
+            padding = "=" * len(normalisation)
+
+            if not error1 and goal and goal != "":
+                result = f"{goal.strip()} \n{padding}\n"
+
+            result = f"{result}{normalisation}"
+            error = error1 and error2 and error3
 
             data = {}
             
             if result != "":
-                data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
+                # data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
                 data['text/plain'] = result
 
         content = {
@@ -485,10 +524,10 @@ class AgdaKernel(Kernel):
             'status' : 'error' if error else 'ok',
 
             # found should be true if an object was found, false otherwise
-            'found' : True if result != "" else False,
+            'found' : True if not error and result != "" else False,
 
             # data can be empty if nothing is found
-            'data' : data,
+            'data' : {} if error else data,
             'metadata' : {}
         }
 
@@ -614,7 +653,7 @@ class AgdaKernel(Kernel):
                         self.print(f"line is: {line}, tokens is: {tokens}")
                         solution = " ".join(tokens[2:]) # skip the first "20  " (plus the extra space!) and put the tokens back
                         matches += [solution]
-                elif error or result in ["No solution found", "No candidate found"]:
+                elif error or result in ["No solution found", "No candidate found", "No solution found after timeout (1000ms)"]:
                      matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
                 else:
                     self.print(f'Unexpected answer: {result}, error is: {error}')
@@ -628,7 +667,7 @@ class AgdaKernel(Kernel):
                     _, _ = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
                     result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_MAKE_CASE)
 
-                    if error:
+                    if error or result == "OK":
                         cursor_start, cursor_end = cursor_pos, cursor_pos
                     else:
                         # need to replace the current whole row with result
@@ -638,9 +677,6 @@ class AgdaKernel(Kernel):
                             cursor_end += 1
 
                 matches = [result] if result != "" else []
-
-           # the hole is not of the form "?"
-           #if matches == []:
 
         return {'matches': matches, 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': {},
