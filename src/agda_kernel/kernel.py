@@ -242,6 +242,9 @@ class AgdaKernel(Kernel):
             #save the result of the last evaluation
             self.cells[fileName] = result
 
+            # save the code that was executed
+            self.code = code
+
         if not silent or err != "":
             stream_content = {'name': 'stdout', 'text': result}
             try:
@@ -427,37 +430,55 @@ class AgdaKernel(Kernel):
 
     # get the type of the current expression
     # triggered by SHIFT+TAB
+    # code is either the current selection, or the whole cell otherwise
+    # cursor_pos is always at the beginning or at the end of the selection
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
         # update with the current cell contents
-        self.do_execute(code, False)
+        # self.do_execute(code, False)
 
-        cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
-        cursor_start += 1
-        
-        if(self.isHole(exp)):
-
-            if exp != "?":
-                exp = exp[2:-2] # strip the initial "{!" and final "!}"
-                self.print(f'considering inside exp: {exp}')
-
-            result1, error1 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
-            result2, error2 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
-            result3, error3 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
-
+        if self.code == "":
+            error = True
+            result = "must load the cell first"
         else:
 
-            result1, error1 = "", False
-            result2, error2 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
-            result3, error3 = self.runCmd(code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+            # we are in a selection and the cursor is at the beginning of the selection
+            if cursor_pos + len(code) < len(self.code) and self.code[cursor_pos:cursor_pos+len(code)] == code:
+                cursor_start, cursor_end, exp = cursor_pos, cursor_pos + len(code), code
+            # we are in a selection and the cursor is at the end of the selection
+            elif cursor_pos - len(code) >= 0 and cursor_pos < len(self.code) and self.code[cursor_pos-len(code):cursor_pos] == code:
+                cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
+            # we are not in a selection
+            else:
+                cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
+                cursor_start += 1
+            
+            self.log.error(f'considering code: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
 
-        result = result1 + "\n===========\nInfer: " + result2 + "\n===========\nCompute: " + result3
-        error = error1 or error2 or error3
+            if(self.isHole(exp)):
 
-        data = {}
-        
-        if result != "":
-            data['text/plain'] = result
+                if exp != "?":
+                    exp = exp[2:-2] # strip the initial "{!" and final "!}"
+                    self.log.debug(f'considering inside exp: {exp}')
+
+                result1, error1 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
+                result2, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
+                result3, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
+
+            else:
+
+                result1, error1 = "", False
+                result2, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+                result3, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+
+            result = result1 + "\n===========\nInfer: " + result2 + "\n===========\nCompute: " + result3
+            error = error1 or error2 or error3
+
+            data = {}
+            
+            if result != "":
+                data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
+                data['text/plain'] = result
 
         content = {
             # 'ok' if the request succeeded or 'error', with error information as in all other replies.
@@ -468,13 +489,15 @@ class AgdaKernel(Kernel):
 
             # data can be empty if nothing is found
             'data' : data,
-            'metadata' : data
+            'metadata' : {}
         }
 
         return content
 
     # handle unicode completion here
     def do_complete(self, code, cursor_pos):
+
+        #self.log.error(f'considering code: {code}, pos: {cursor_pos}')
 
         half_subst = {
             'Nat' : 'ℕ',
