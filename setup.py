@@ -12,7 +12,7 @@ setup(
     package_dir={"": "src"},
     description='A rudimentary Jupyter kernel for Agda',
     long_description=readme,
-    #long_description_content_type="text/markdown",
+    long_description_content_type="text/markdown",
     author='Lorenzo Clemente',
     author_email='clementelorenzo@gmail.com',
     url='https://github.com/lclem/agda-kernel',
