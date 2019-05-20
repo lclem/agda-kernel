@@ -200,6 +200,7 @@ class AgdaKernel(Kernel):
         self.startAgda()
         fileName = self.getFileName(code)
         dirName = self.getDirName(code)
+        absoluteFileName = os.path.abspath(fileName)
 
         self.print(f'detected fileName: {fileName}, dirName: {dirName}, while parsing: {code}')
         error = False
@@ -208,7 +209,7 @@ class AgdaKernel(Kernel):
         numLines = len(lines)
 
         if fileName == "":
-            err = f"*Error*: /???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
+            err = f"*Error*: /./???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
             result = err
         else:
             #self.log.error("file: %s" % fileName)
@@ -254,11 +255,13 @@ class AgdaKernel(Kernel):
             except AttributeError: # during testing there is no such method, just ignore
                 self.print("Ignoring call to self.send_response")
 
+        user_expressions = { "fileName" : absoluteFileName}
+
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
                 'execution_count': self.execution_count,
                 'payload': [],
-                'user_expressions': {},
+                'user_expressions': user_expressions,
                }
                
     def inComment(self, code, pos):
