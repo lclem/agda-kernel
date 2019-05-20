@@ -466,7 +466,9 @@ class AgdaKernel(Kernel):
             result = "must load the cell first"
         else:
 
-            self.log.error(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
+            #self.log.error(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
+
+            exp = ""
 
             #we are in a selection
             if len(code) < len(self.code):
@@ -479,10 +481,12 @@ class AgdaKernel(Kernel):
                     self.log.error(f'we are in a selected text, cursor at the end')
                     cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
                 else:
-                    self.log.error(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
-            # we are not in a selection
-            else:
-                cursor_start, cursor_end, exp = self.find_expression(self.code, cursor_pos)
+                #    self.log.error(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
+                    return {'status': 'ok', 'found': True, 'data': {'text/plain': 'load the cell first'}, 'metadata': {}}
+            # we are not in a selection, or an error above occurred
+            else: # if exp == "":
+                #self.code = code
+                cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
                 cursor_start += 1
             
             self.log.error(f'considering code: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
