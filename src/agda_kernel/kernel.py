@@ -202,7 +202,7 @@ class AgdaKernel(Kernel):
         dirName = self.getDirName(code)
         absoluteFileName = os.path.abspath(fileName)
 
-        self.print(f'detected fileName: {fileName}, dirName: {dirName}, while parsing: {code}')
+        #self.print(f'detected fileName: {fileName}, dirName: {dirName}, while parsing: {code}')
         error = False
 
         lines = code.split('\n')
