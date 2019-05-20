@@ -18,6 +18,6 @@ jupyter nbextension enable --py widgetsnbextension
 jupyter nbextension enable agda-extension/main
 jupyter nbextension enable literate-markdown/main
 jupyter nbextension enable toc2/main
-jupyter nbextension enable hide_input/main
+#jupyter nbextension enable hide_input/main
 #jupyter nbextension enable init_cell/main
-jupyter nbextension enable freeze/main
+#jupyter nbextension enable freeze/main
