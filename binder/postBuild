@@ -23,4 +23,4 @@ jupyter nbextension enable toc2/main
 #jupyter nbextension enable freeze/main
 
 # change theme with jupyter-themes
-jt -t grade3 -f roboto -fs 10
+jt -t grade3 -f roboto -fs 10 -cellw 800 -altp -T
