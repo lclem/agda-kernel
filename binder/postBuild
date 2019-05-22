@@ -21,3 +21,6 @@ jupyter nbextension enable toc2/main
 #jupyter nbextension enable hide_input/main
 #jupyter nbextension enable init_cell/main
 #jupyter nbextension enable freeze/main
+
+# change theme with jupyter-themes
+jt -t grade3 -f roboto -fs 10
