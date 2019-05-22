@@ -7,4 +7,5 @@ dependencies:
   - pip
   - pip:
     - git+https://github.com/lclem/jupyter_contrib_nbextensions
+    - jupyterthemes
 #    - agda_kernel
