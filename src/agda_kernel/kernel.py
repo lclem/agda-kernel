@@ -259,9 +259,22 @@ class AgdaKernel(Kernel):
             except AttributeError: # during testing there is no such method, just ignore
                 self.print("Ignoring call to self.send_response")
 
-        # TODO return holes
+        # return all holes
+        holes_as_pairs_of_positions = self.findAllHoles(code)
 
-        user_expressions = {"fileName": absoluteFileName}
+        # pairs are just lists of length 2 (join the lists)
+        holes_as_positions = sum(map(lambda x: [x[0], x[1]], holes_as_pairs_of_positions), []) 
+        #self.log.error(f'holes_as_positions = {holes_as_positions}')
+
+        # replace each absolute position with the pair (line number, relative position)
+        holes_as_lines_rel_pos = list(map(lambda x: self.line_of(code, x), holes_as_positions))
+
+        # the first component is the line, the second the relative position within the line;
+        # project to the line number
+        holes_as_lines = list(map(lambda x: x[0], holes_as_lines_rel_pos)) 
+        self.log.error(f'holes_as_lines = {holes_as_lines}')
+
+        user_expressions = {"fileName": absoluteFileName, "holes": holes_as_lines}
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
