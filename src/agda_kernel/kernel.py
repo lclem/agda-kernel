@@ -36,6 +36,7 @@ AGDA_CMD_COMPUTE = "Cmd_compute"
 AGDA_CMD_COMPUTE_TOPLEVEL = "Cmd_compute_toplevel"
 AGDA_CMD_REFINE_OR_INTRO = "Cmd_refine_or_intro"
 AGDA_CMD_MAKE_CASE = "Cmd_make_case"
+AGDA_CMD_GIVE = "Cmd_give"
 
 class AgdaKernel(Kernel):
     implementation = 'agda'
@@ -149,6 +150,9 @@ class AgdaKernel(Kernel):
                 key = tokens[0]
                 rest = line[start + len(key):]
 
+                #TODO: this is not currently parsed: (agda2-give-action 1 'no-paren)
+                # need to extract the hole number "1" and return it
+
                 # extract all the strings in quotation marks "..."
                 rest = rest.replace("\\\"", "§") # replace \" with §
                 values = re.findall('"([^"]*)"', rest) # find all strings in quotation marks "..."
@@ -209,7 +213,7 @@ class AgdaKernel(Kernel):
         numLines = len(lines)
 
         if fileName == "":
-            err = f"*Error*: /./???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
+            err = f"*Error*: /directory/???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
             result = err
         else:
             #self.log.error("file: %s" % fileName)
@@ -255,7 +259,9 @@ class AgdaKernel(Kernel):
             except AttributeError: # during testing there is no such method, just ignore
                 self.print("Ignoring call to self.send_response")
 
-        user_expressions = { "fileName" : absoluteFileName}
+        # TODO return holes
+
+        user_expressions = {"fileName": absoluteFileName}
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
@@ -385,6 +391,8 @@ class AgdaKernel(Kernel):
             query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_REFINE_OR_INTRO} {flag} {interactionId} {intervalsToRange} "{inside_exp}")'
         elif cmd == AGDA_CMD_MAKE_CASE:
             query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_MAKE_CASE} {interactionId} {intervalsToRange} "{inside_exp}")'
+        elif cmd == AGDA_CMD_GIVE:
+            query = f'IOTCM "{absoluteFileName}" NonInteractive Indirect ({AGDA_CMD_GIVE} WithoutForce {interactionId} {intervalsToRange} "{inside_exp}")'
         else:
             return f"Unrecognised command: {cmd}", True
         
@@ -410,26 +418,17 @@ class AgdaKernel(Kernel):
             elif any(x in AGDA_ERROR_LIKE for x in info_action_types):
                 info_action_message = "".join([f"{item[0]}: {deescapify(item[1])}" if item[0] in AGDA_ERROR_LIKE else "" for item in response[AGDA_INFO_ACTION]])
 
-                # error recovery: if there is a string "did you mean 'new_exp'?",
-                # then call again with new_exp
-                matches = re.findall(r'did you mean \'([^\']*)\'\?', info_action_message)
+                if cmd != AGDA_CMD_LOAD:
+                    # error recovery: if there is a string "did you mean 'new_exp'?",
+                    # then call again with new_exp (except if we are loading)
+                    matches = re.findall(r'did you mean \'([^\']*)\'\?', info_action_message)
+                    if len(matches) > 0:
+                        new_exp = matches[0]
+                        if new_exp != exp: # avoid a potential infinite loop
+                            self.log.error(f'trying error recovery with new expression: {new_exp}')
+                            return self.runCmd(code, cursor_start, cursor_end, new_exp, cmd)
 
-                if len(matches) > 0:
-                    new_exp = matches[0]
-                    self.log.error(f'trying error recovery with new expression: {new_exp}')
-                    return self.runCmd(code, cursor_start, cursor_end, new_exp, cmd)
-                else:
-                    #return f'{AGDA_ERROR}: {info_action_message}', True
-                    return info_action_message, True
-#            elif AGDA_ALL_GOALS_ERRORS in info_action_types:
-#                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
-#                return f'{AGDA_ALL_GOALS_ERRORS}: {info_action_message}', True
-#            elif AGDA_ALL_ERRORS in info_action_types:
-#                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
-#                return f'{AGDA_ALL_ERRORS}: {info_action_message}', True
-#            elif AGDA_ALL_ERRORS in info_action_types:
-#                info_action_message = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_ERRORS else "" for item in response[AGDA_INFO_ACTION]])
-#                return f'{AGDA_ALL_ERRORS}: {info_action_message}', True               
+                return info_action_message, True
             elif AGDA_INFERRED_TYPE in info_action_types:
                 inferred_type = info_action_message
                 return f'{inferred_type}', False # if inferred_type != "" else str(response)
@@ -486,6 +485,7 @@ class AgdaKernel(Kernel):
             # we are not in a selection, or an error above occurred
             else: # if exp == "":
                 #self.code = code
+                self.do_execute(code, False) # improves interaction without the need of an explicit reload
                 cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
                 cursor_start += 1
             
@@ -509,13 +509,12 @@ class AgdaKernel(Kernel):
 
             self.log.error(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
 
-
             if not error2 and not error3:
-                normalisation = f"{exp.strip()} = {normal_form.strip()} : {inferred_type.strip()}"
+                normalisation = f"{exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
             elif not error2:
                 normalisation = f"{exp.strip()} : {inferred_type.strip()}"
             elif not error3:
-                normalisation = f"{exp.strip()} = {normal_form.strip()}"
+                normalisation = f"{exp.strip()} --> {normal_form.strip()}"
             else:
                 normalisation = ""
 
@@ -590,6 +589,8 @@ class AgdaKernel(Kernel):
             'qed' : '∎',
             '.' : '·',
             'd' : '∇',
+            'Delta' : 'Δ',
+            'delta' : 'δ',
             'notin' : '∉',
             'in' : '∈',
             '[' : '⟦',
@@ -606,7 +607,10 @@ class AgdaKernel(Kernel):
             '??' : "{! !}",
             'iff' : '⟺',
             'w'  : 'ω ',
-            'omega' : 'ω'
+            'omega' : 'ω',
+            ';' : ';',
+            '(' : '⟬',
+            ')' : '⟭'
         }
 
         other_half = {val : key for (key, val) in half_subst.items()}
@@ -674,21 +678,37 @@ class AgdaKernel(Kernel):
                 
             elif self.isHole(exp):
 
-                result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_REFINE_OR_INTRO)
+                # first, try to replace the hole with its current contents
+                result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_GIVE)
 
-                if error: # try case
-                    # need to reload to make it work
-                    _, _ = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
-                    result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_MAKE_CASE)
+                if error:
+                    # second, try to automatically refine the current
+                    result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_REFINE_OR_INTRO)
 
-                    if error or result == "OK":
-                        cursor_start, cursor_end = cursor_pos, cursor_pos
-                    else:
-                        # need to replace the current whole row with result
-                        while cursor_start > 0 and code[cursor_start - 1] != "\n":
-                            cursor_start -= 1
-                        while cursor_end < length and code[cursor_end] != "\n":
-                            cursor_end += 1
+                    if error: # try case
+                        # need to reload to make it work (??)
+                        _, _ = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
+
+                        # third, try to introduce a case analysis
+                        result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_MAKE_CASE)
+
+                        if error or result == "OK":
+                            cursor_start, cursor_end = cursor_pos, cursor_pos
+                            result = ""
+                        else:
+                            # need to replace the current row with result
+                            while cursor_start > 0 and code[cursor_start - 1] != "\n":
+                                cursor_start -= 1
+                            while cursor_end < length and code[cursor_end] != "\n":
+                                cursor_end += 1
+                    elif result == "OK":
+                        # close the hole
+                        result1 = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
+                        self.log.error(f'not closing hole: {result1}')
+                elif result == "OK":
+                    # close the hole
+                    result = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
+                    self.log.error(f'gave hole: {result}')
 
                 matches = [result] if result != "" else []
 
