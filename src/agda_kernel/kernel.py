@@ -277,7 +277,7 @@ class AgdaKernel(Kernel):
         # the first component is the line, the second the relative position within the line;
         # project to the line number
         holes_as_lines = list(map(lambda x: x[0], holes_as_lines_rel_pos)) 
-        self.log.error(f'holes_as_lines = {holes_as_lines}')
+        #self.log.error(f'holes_as_lines = {holes_as_lines}')
 
         user_expressions = {"fileName": absoluteFileName, "holes": holes_as_lines}
 
