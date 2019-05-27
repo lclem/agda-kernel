@@ -221,7 +221,7 @@ class AgdaKernel(Kernel):
             err = f"*Error*: /directory/???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
             result = err
         else:
-            #self.log.error("file: %s" % fileName)
+            #self.print("file: %s" % fileName)
 
             if dirName != "" and not os.path.exists(dirName):
                 os.makedirs(dirName)
@@ -246,7 +246,7 @@ class AgdaKernel(Kernel):
             except:
                 print("*.agdai file not found")
 
-        # self.log.error("output: %s" % result)
+        # self.print("output: %s" % result)
 
             if result == "":
                 result = "OK"
@@ -269,7 +269,7 @@ class AgdaKernel(Kernel):
 
         # pairs are just lists of length 2 (join the lists)
         holes_as_positions = sum(map(lambda x: [x[0], x[1]], holes_as_pairs_of_positions), []) 
-        #self.log.error(f'holes_as_positions = {holes_as_positions}')
+        #self.print(f'holes_as_positions = {holes_as_positions}')
 
         # replace each absolute position with the pair (line number, relative position)
         holes_as_lines_rel_pos = list(map(lambda x: self.line_of(code, x), holes_as_positions))
@@ -277,7 +277,7 @@ class AgdaKernel(Kernel):
         # the first component is the line, the second the relative position within the line;
         # project to the line number
         holes_as_lines = list(map(lambda x: x[0], holes_as_lines_rel_pos)) 
-        #self.log.error(f'holes_as_lines = {holes_as_lines}')
+        #self.print(f'holes_as_lines = {holes_as_lines}')
 
         user_expressions = {"fileName": absoluteFileName, "holes": holes_as_lines}
 
@@ -352,7 +352,7 @@ class AgdaKernel(Kernel):
         result = exp == "?" or re.search("\\{!.*!\\}", exp) != None
 
         try:
-            self.log.error(f'the expression "{exp}" is a hole? {result}')
+            self.print(f'the expression "{exp}" is a hole? {result}')
         except AttributeError: # during testing there is no such method, just ignore
             self.print("Ignoring call to self.send_response")
 
@@ -460,7 +460,7 @@ class AgdaKernel(Kernel):
                     if len(matches) > 0:
                         new_exp = matches[0]
                         if new_exp != exp: # avoid a potential infinite loop
-                            self.log.error(f'trying error recovery with new expression: {new_exp}')
+                            self.print(f'trying error recovery with new expression: {new_exp}')
                             return self.runCmd(code, cursor_start, cursor_end, new_exp, cmd)
 
                 return info_action_message, True
@@ -503,7 +503,7 @@ class AgdaKernel(Kernel):
             result = "must load the cell first"
         else:
 
-            #self.log.error(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
+            #self.print(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
 
             exp = ""
 
@@ -511,14 +511,14 @@ class AgdaKernel(Kernel):
             if len(code) < len(self.code):
                 # we are in a selection and the cursor is at the beginning of the selection
                 if  cursor_pos + len(code) <= len(self.code) and self.code[cursor_pos:cursor_pos+len(code)] == code:
-                    self.log.error(f'we are in a selected text, cursor at the beginning')
+                    self.print(f'we are in a selected text, cursor at the beginning')
                     cursor_start, cursor_end, exp = cursor_pos, cursor_pos + len(code), code
                 # we are in a selection and the cursor is at the end of the selection
                 elif cursor_pos - len(code) >= 0 and cursor_pos <= len(self.code) and self.code[cursor_pos-len(code):cursor_pos] == code:
-                    self.log.error(f'we are in a selected text, cursor at the end')
+                    self.print(f'we are in a selected text, cursor at the end')
                     cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
                 else:
-                #    self.log.error(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
+                #    self.print(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
                     return {'status': 'ok', 'found': True, 'data': {'text/plain': 'load the cell first'}, 'metadata': {}}
             # we are not in a selection, or an error above occurred
             else: # if exp == "":
@@ -527,7 +527,7 @@ class AgdaKernel(Kernel):
                 cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
                 cursor_start += 1
             
-            self.log.error(f'considering code: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+            self.print(f'considering code: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
 
             if self.isHole(exp):
                 if exp != "?":
@@ -544,7 +544,7 @@ class AgdaKernel(Kernel):
 
             result = ""
 
-            self.log.error(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
+            self.print(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
 
             if not error2 and not error3:
                 normalisation = f"{exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
@@ -570,7 +570,7 @@ class AgdaKernel(Kernel):
             data = {}
 
             error = False
-            self.log.error(f'result: {result}')
+            self.print(f'result: {result}')
             
             if result != "":
                 # data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
@@ -593,7 +593,7 @@ class AgdaKernel(Kernel):
     # handle unicode completion here
     def do_complete(self, code, cursor_pos):
 
-        #self.log.error(f'considering code: {code}, pos: {cursor_pos}')
+        #self.print(f'considering code: {code}, pos: {cursor_pos}')
 
         half_subst = {
             'Nat' : 'ℕ',
@@ -710,7 +710,7 @@ class AgdaKernel(Kernel):
                 k = 0
                 while True:
                     result, error = self.runCmd(code, cursor_start, cursor_end, options(k), AGDA_CMD_AUTOONE)
-                    self.log.error(f'result is: {result}, error is: {error}')
+                    self.print(f'result is: {result}, error is: {error}')
                     if error or result in ["No solution found", "No candidate found", "Only 1 solution found", f'Only {k} solutions found']:
                         if matches == []:
                             matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
@@ -744,7 +744,7 @@ class AgdaKernel(Kernel):
                 # first, try to replace the hole with its current contents
                 result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_GIVE)
 
-                self.log.error(f'AGDA_CMD_GIVE, result: {result}, error: {error}')
+                self.print(f'AGDA_CMD_GIVE, result: {result}, error: {error}')
 
                 if error:
                     # second, try to automatically refine the current
@@ -769,24 +769,24 @@ class AgdaKernel(Kernel):
                     elif result == "OK":
                         # cannot close the hole
                         result1 = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
-                        self.log.error(f'not closing hole: {result1}')
+                        self.print(f'not closing hole: {result1}')
                     else:
                         # in this case result is a refined goal and we can refine the hole
                         result = result
                 elif result == "OK":
                     # close the hole
                     result = "(" + re.search(r'\{! *(.*) *!\}', exp).group(1).strip() + ")"
-                    self.log.error(f'gave hole: {result}')
+                    self.print(f'gave hole: {result}')
 
                 matches = [result] if result != "" else []
 
-            self.log.error(f'exp: {exp}, matches: {matches}')
+            self.print(f'exp: {exp}, matches: {matches}')
 
             # always replace "?" with a hole in case there is no match
             if exp == "?" and matches == []:
                 matches = ["{! !}"]
                 cursor_start, cursor_end = cursor_start_orig, cursor_end_orig
-                self.log.error(f'cursor_start: {cursor_start}, cursor_end: {cursor_end}')
+                self.print(f'cursor_start: {cursor_start}, cursor_end: {cursor_end}')
                 error = False
     
         return {'matches': matches, 'cursor_start': cursor_start,
