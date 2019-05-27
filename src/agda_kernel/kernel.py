@@ -18,13 +18,16 @@ AGDA_ALL_ERRORS = "*All Errors*"
 AGDA_ALL_GOALS = "*All Goals*"
 AGDA_ALL_GOALS_ERRORS = "*All Goals, Errors*"
 AGDA_ALL_WARNINGS = "*All Warnings*"
+AGDA_ALL_ERRORS_WARNINGS = "*All Errors, Warnings*"
+AGDA_ALL_GOALS_WARNINGS = "*All Goals, Warnings*"
+AGDA_ALL_GOALS_ERRORS_WARNINGS = "*All Goals, Errors, Warnings*"
 AGDA_GOAL_TYPE_ETC = "*Goal type etc.*"
 AGDA_CHECKED = "Checked"
 AGDA_INFERRED_TYPE = "*Inferred Type*"
 AGDA_AUTO = "*Auto*"
 AGDA_TYPECHECKING = "*Type-checking*"
 
-AGDA_ERROR_LIKE = [AGDA_ERROR, AGDA_ALL_ERRORS, AGDA_ALL_GOALS, AGDA_ALL_GOALS_ERRORS, AGDA_ALL_WARNINGS]
+AGDA_ERROR_LIKE = [AGDA_ERROR, AGDA_ALL_ERRORS, AGDA_ALL_GOALS, AGDA_ALL_GOALS_ERRORS, AGDA_ALL_WARNINGS, AGDA_ALL_ERRORS_WARNINGS, AGDA_ALL_GOALS_WARNINGS, AGDA_ALL_GOALS_ERRORS_WARNINGS]
 
 AGDA_CMD_LOAD = "Cmd_load"
 AGDA_CMD_INFER = "Cmd_infer"
@@ -140,7 +143,7 @@ class AgdaKernel(Kernel):
 
         result = {}
         
-        #parse the response
+        # parse the response
         for line in lines:
             start = line.find("agda2")
             # parse only lines containing "agda2", and from that position on
@@ -150,9 +153,6 @@ class AgdaKernel(Kernel):
                 key = tokens[0]
                 rest = line[start + len(key):]
 
-                #TODO: this is not currently parsed: (agda2-give-action 1 'no-paren)
-                # need to extract the hole number "1" and return it
-
                 # extract all the strings in quotation marks "..."
                 rest = rest.replace("\\\"", "§") # replace \" with §
                 values = re.findall('"([^"]*)"', rest) # find all strings in quotation marks "..."
@@ -160,6 +160,11 @@ class AgdaKernel(Kernel):
 
                 if not key in result:
                     result[key] = []
+
+                # in this case the format is "(agda2-give-action 0 'no-paren)"
+                # return the goal index 0
+                if key == AGDA_GIVE_ACTION:
+                    result[key] = [tokens[1]]
 
                 # add the new values to the dictionary
                 result[key].append(values)
@@ -419,13 +424,30 @@ class AgdaKernel(Kernel):
             info_action_type, info_action_message = "", ""
 
         if AGDA_INFO_ACTION in response:
+
+            self.print(f"there is AGDA_INFO_ACTION")
+
             if AGDA_ALL_DONE in info_action_types:
                 return "OK", False
             elif AGDA_ALL_GOALS in info_action_types:
+
+                self.print(f"there is AGDA_ALL_GOALS")
+
                 if AGDA_GIVE_ACTION in response: # if there is a give action, it has priority
-                    result = response[AGDA_GIVE_ACTION][0]
-                    if len(result) > 0:
-                        return result[0], False
+
+                    result = response[AGDA_GIVE_ACTION]
+                    self.print(f"there is AGDA_GIVE_ACTION, with content {result}, and interactionId = {interactionId}")
+
+                    if cmd in [AGDA_CMD_GIVE, AGDA_CMD_REFINE_OR_INTRO] and len(result) > 0 and int(result[0]) == interactionId:
+                        self.print(f"got matching hole!")
+
+                        if cmd == AGDA_CMD_GIVE:
+                            return "OK", False
+                        elif cmd == AGDA_CMD_REFINE_OR_INTRO and len(result) > 1 and result[1] != "":
+                            return result[1], False
+                        else:
+                            return "OK", False
+
                 goals = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
                 return goals, False
             elif any(x in AGDA_ERROR_LIKE for x in info_action_types):
@@ -473,6 +495,9 @@ class AgdaKernel(Kernel):
         # update with the current cell contents
         # self.do_execute(code, False)
 
+        # TODO: inspection of a selection (after the cell has been loaded):
+        # add a new hole around the current selection and query Agda locally
+
         if self.code == "":
             error = True
             result = "must load the cell first"
@@ -512,7 +537,6 @@ class AgdaKernel(Kernel):
                 goal, error1 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
                 inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
                 normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
-
             else:
                 goal, error1 = "", False
                 inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
@@ -536,10 +560,17 @@ class AgdaKernel(Kernel):
             if not error1 and goal and goal != "":
                 result = f"{goal.strip()} \n{padding}\n"
 
-            result = f"{result}{normalisation}"
             error = error1 and error2 and error3
 
+            if error:
+                result = normal_form.strip()
+            else:
+                result = f"{result}{normalisation}"
+
             data = {}
+
+            error = False
+            self.log.error(f'result: {result}')
             
             if result != "":
                 # data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
@@ -578,6 +609,10 @@ class AgdaKernel(Kernel):
             'Pi' : 'Π',
             'Sigma' : 'Σ',
             '->' : '→',
+            '→' :  '↦',
+            '↦' : '↝',
+            '↝' : '->',
+            '=>' : '⇒',
             '<' : '⟨',
             '>' : '⟩', # it is important that this comes after ->
             'forall' : '∀',
@@ -596,6 +631,8 @@ class AgdaKernel(Kernel):
             '[=' : '⊑',
             'alpha' : 'α',
             'beta' : 'β',
+            'gamma' : 'γ',
+            'rho' : 'ρ',
             'e' : 'ε',
             'xor' : '⊗',
             'emptyset' : '∅',
@@ -610,23 +647,34 @@ class AgdaKernel(Kernel):
             ']' : '⟧',
             '::' : '∷',
             '0' : '𝟬', # '𝟢',
+            '𝟬' : '₀',
+            '₀' : '0',
             '1' : '𝟭', # '𝟣'
+            '𝟭' : '₁',
+            '₁' : '1',
+            '2' : '₂',
             '+' : '⨁',
             '~' : '≈',
             'x' : '×',
             'o' : '∘',
             'phi' : 'φ',
             'psi' : 'ψ',
-            '??' : "{! !}",
+            #'??' : "{! !}",
             'iff' : '⟺',
             'w'  : 'ω ',
             'omega' : 'ω',
+            'Gamma' : 'Γ',
+            'tau' : 'τ',
+            'sigma' : 'σ',
             ';' : ';',
             '(' : '⟬',
-            ')' : '⟭'
+            ')' : '⟭',
+            'b' : 'ᵇ',
+            'empty' : '∅',
+            '|-' : '⊢'
         }
 
-        other_half = {val : key for (key, val) in half_subst.items()}
+        other_half = {val : key for (key, val) in half_subst.items() if val not in list(half_subst.keys())}
         subst = {**half_subst, **other_half} # merge the two dictionaries
         keys = [key for (key, val) in subst.items()]
 
@@ -651,7 +699,8 @@ class AgdaKernel(Kernel):
             # load the current contents
             self.do_execute(code, False)
 
-            cursor_start, cursor_end, exp_orig = self.find_expression(code, cursor_pos)
+            cursor_start_orig, cursor_end_orig, exp_orig = self.find_expression(code, cursor_pos)
+            cursor_start, cursor_end = cursor_start_orig, cursor_end_orig
             exp = escapify(exp_orig)
             #cursor_start += 1
 
@@ -689,10 +738,13 @@ class AgdaKernel(Kernel):
                 else:
                     self.print(f'Unexpected answer: {result}, error is: {error}')
                 
-            elif self.isHole(exp):
+            # continue the chain if Agsy fails
+            if self.isHole(exp) and (exp != "?" or matches == ["{! !}"]):
 
                 # first, try to replace the hole with its current contents
                 result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_GIVE)
+
+                self.log.error(f'AGDA_CMD_GIVE, result: {result}, error: {error}')
 
                 if error:
                     # second, try to automatically refine the current
@@ -715,19 +767,31 @@ class AgdaKernel(Kernel):
                             while cursor_end < length and code[cursor_end] != "\n":
                                 cursor_end += 1
                     elif result == "OK":
-                        # close the hole
+                        # cannot close the hole
                         result1 = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
                         self.log.error(f'not closing hole: {result1}')
+                    else:
+                        # in this case result is a refined goal and we can refine the hole
+                        result = result
                 elif result == "OK":
                     # close the hole
-                    result = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
+                    result = "(" + re.search(r'\{! *(.*) *!\}', exp).group(1).strip() + ")"
                     self.log.error(f'gave hole: {result}')
 
                 matches = [result] if result != "" else []
 
+            self.log.error(f'exp: {exp}, matches: {matches}')
+
+            # always replace "?" with a hole in case there is no match
+            if exp == "?" and matches == []:
+                matches = ["{! !}"]
+                cursor_start, cursor_end = cursor_start_orig, cursor_end_orig
+                self.log.error(f'cursor_start: {cursor_start}, cursor_end: {cursor_end}')
+                error = False
+    
         return {'matches': matches, 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': {},
-            'status': 'ok' if not error else 'error'}
+                'status': 'ok' if not error else 'error'}
 
     def findAllHoles(self, code):
         i = 0
@@ -735,13 +799,31 @@ class AgdaKernel(Kernel):
         holes = []
 
         while i < length:
-            if code[i:i+2] == "--": # we are in a comment
+            if code[i:i+2] == "--": # we are in a line comment
                 while i < length and code[i] != "\n":
                     i += 1 # skip to the end of the line
+            elif code[i:i+2] == "{-": # we are in a block comment
+                i += 2
+                k = 1
+                while i < length and k > 0:
+                    if code[i:i+2] == "{-":
+                        k += 1
+                        i += 2
+                    elif code[i:i+2] == "-}":
+                        k -= 1
+                        i += 2
+                    else:
+                        i += 1
             elif code[i:i+1] == "?" and i+1 == length:
                 holes.append((i, i+1))
                 i += 1
-            elif code[i:i+3] in [" ?\n", " ? "] or (code[i:i+2] == " ?" and i+2 == length):
+            elif code[i:i+2] in ["(?"]:
+                holes.append((i+1, i+2))
+                i += 2
+            elif code[i:i+2] in ["?)"]:
+                holes.append((i, i+1))
+                i += 1
+            elif code[i:i+3] in [" ?\n", " ? ", "(?)"] or (code[i:i+2] == " ?" and i+2 == length):
                 holes.append((i+1, i+2))
                 i += 2
             elif code[i:i+2] == "{!": # beginning of a hole
