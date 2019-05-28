@@ -13,9 +13,9 @@ test: build install kernel-install codemirror-install
 pytest: install
 	pytest
 
-build: dist/agda_kernel-0.5-py3-none-any.whl
+build: dist/agda_kernel-0.6-py3-none-any.whl
 
-dist/agda_kernel-0.5-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
+dist/agda_kernel-0.6-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
 #	pylint src/agda_kernel/kernel.py
 	python setup.py bdist_wheel
 
