@@ -624,6 +624,7 @@ class AgdaKernel(Kernel):
             'Q' : 'ℚ',
             'R' : 'ℝ',
             'Z' : 'ℤ',
+            ':=' : '≔',
             '/=' : '≢',
             'leq' : '≤',
             '<=' : '≤',
@@ -672,8 +673,7 @@ class AgdaKernel(Kernel):
             ')' : '⟭',
             'b' : 'ᵇ',
             'empty' : '∅',
-            '|-' : '⊢',
-            ':=' : '≔'
+            '|-' : '⊢'
         }
 
         other_half = {val : key for (key, val) in half_subst.items() if val not in list(half_subst.keys())}
