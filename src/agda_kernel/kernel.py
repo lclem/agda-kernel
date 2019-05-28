@@ -547,11 +547,11 @@ class AgdaKernel(Kernel):
             self.print(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
 
             if not error2 and not error3:
-                normalisation = f"{exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+                normalisation = f"Eval {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
             elif not error2:
                 normalisation = f"{exp.strip()} : {inferred_type.strip()}"
             elif not error3:
-                normalisation = f"{exp.strip()} --> {normal_form.strip()}"
+                normalisation = f"Eval {exp.strip()} --> {normal_form.strip()}"
             else:
                 normalisation = ""
 
@@ -666,12 +666,14 @@ class AgdaKernel(Kernel):
             'Gamma' : 'Γ',
             'tau' : 'τ',
             'sigma' : 'σ',
-            ';' : ';',
+            #';' : ';', very bad idea: the second semicolon lloks the same but it is a different unicode symbol...
+            ';' : '⨟',
             '(' : '⟬',
             ')' : '⟭',
             'b' : 'ᵇ',
             'empty' : '∅',
-            '|-' : '⊢'
+            '|-' : '⊢',
+            ':=' : '≔'
         }
 
         other_half = {val : key for (key, val) in half_subst.items() if val not in list(half_subst.keys())}
