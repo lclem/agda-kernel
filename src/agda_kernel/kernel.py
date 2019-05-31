@@ -54,6 +54,7 @@ class AgdaKernel(Kernel):
 
     banner = "Agda kernel"
     cells = {}
+    last_code = ""
 
     agda_version = ""
 
@@ -489,21 +490,15 @@ class AgdaKernel(Kernel):
     # get the type of the current expression
     # triggered by SHIFT+TAB
     # code is either the current selection, or the whole cell otherwise
-    # cursor_pos is always at the beginning or at the end of the selection
+    # cursor_pos is always at the beginning or at the end of the selection;
     def do_inspect(self, code, cursor_pos, detail_level=0):
-
-        # update with the current cell contents
-        # self.do_execute(code, False)
-
-        # TODO: inspection of a selection (after the cell has been loaded):
-        # add a new hole around the current selection and query Agda locally
 
         if self.code == "":
             error = True
             result = "must load the cell first"
         else:
 
-            #self.print(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
+            self.print(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
 
             exp = ""
 
@@ -522,36 +517,46 @@ class AgdaKernel(Kernel):
                     return {'status': 'ok', 'found': True, 'data': {'text/plain': 'load the cell first'}, 'metadata': {}}
             # we are not in a selection, or an error above occurred
             else: # if exp == "":
-                #self.code = code
-                self.do_execute(code, False) # improves interaction without the need of an explicit reload
                 cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
                 cursor_start += 1
             
-            self.print(f'considering code: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+            self.print(f'current exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
 
-            if self.isHole(exp):
-                if exp != "?":
-                    exp = exp[2:-2] # strip the initial "{!" and final "!}"
-                    self.log.debug(f'considering inside exp: {exp}')
-
-                goal, error1 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
-                inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
-                normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
+            # if we are not in a hole,
+            # create an artificial hole around the current selection and reload
+            if not self.isHole(exp):
+                new_code = self.code[:cursor_start] + "{! " + exp + " !}" + self.code[cursor_end:]
+                old_code = self.code
+                self.print(f'new_code: {new_code}')
+                self.do_execute(new_code, False)
+                cursor_start, cursor_end, exp = self.find_expression(new_code, cursor_start)
             else:
-                goal, error1 = "", False
-                inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
-                normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+                new_code = old_code = self.code
+
+            if exp != "?":
+                exp = exp[2:-2] # strip the initial "{!" and final "!}"
+                self.log.debug(f'considering inside exp: {exp}')
+
+            self.print(f'considering exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+
+            goal, error1 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
+            inferred_type, error2 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
+            normal_form, error3 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
+
+            #goal, error1 = "", False
+            #inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+            #normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
 
             result = ""
 
             self.print(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
 
             if not error2 and not error3:
-                normalisation = f"Eval {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+                normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
             elif not error2:
                 normalisation = f"{exp.strip()} : {inferred_type.strip()}"
             elif not error3:
-                normalisation = f"Eval {exp.strip()} --> {normal_form.strip()}"
+                normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
             else:
                 normalisation = ""
 
@@ -575,6 +580,10 @@ class AgdaKernel(Kernel):
             if result != "":
                 # data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
                 data['text/plain'] = result
+
+            # undo file modifications if we created a new hole
+            if new_code != old_code:
+                self.do_execute(old_code, False)
 
         content = {
             # 'ok' if the request succeeded or 'error', with error information as in all other replies.
