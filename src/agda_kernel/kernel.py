@@ -469,8 +469,18 @@ class AgdaKernel(Kernel):
                 inferred_type = info_action_message
                 return f'{inferred_type}', False # if inferred_type != "" else str(response)
             elif AGDA_GOAL_TYPE_ETC in info_action_types:
-                #self.print(f'info_action_message: {info_action_message}')
-                return info_action_message, False
+                result = info_action_message
+                blocks = result.split('————————————————————————————————————————————————————————————')
+                result = blocks[0] + blocks[1]
+
+                # find the maximal line length
+                lines = result.split('\n')
+                max_len = max(list(map(len, lines)))
+
+                result = blocks[0] + ("-" * max_len) + blocks[1]
+                self.print(f'AGDA_GOAL_TYPE_ETC case, max_len: {max_len}, result: {result}')
+
+                return result, False
             elif AGDA_AUTO in info_action_types:
                 return info_action_message, False
             elif AGDA_NORMAL_FORM in info_action_types:
