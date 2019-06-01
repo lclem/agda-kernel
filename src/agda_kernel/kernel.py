@@ -496,6 +496,7 @@ class AgdaKernel(Kernel):
         if self.code == "":
             error = True
             result = "must load the cell first"
+            self.print(f'{result}')
         else:
 
             self.print(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
@@ -528,7 +529,6 @@ class AgdaKernel(Kernel):
                 new_code = self.code[:cursor_start] + "{! " + exp + " !}" + self.code[cursor_end:]
                 old_code = self.code
                 self.print(f'new_code: {new_code}')
-                self.do_execute(new_code, False)
                 cursor_start, cursor_end, exp = self.find_expression(new_code, cursor_start)
             else:
                 new_code = old_code = self.code
@@ -539,13 +539,11 @@ class AgdaKernel(Kernel):
 
             self.print(f'considering exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
 
+            self.do_execute(new_code, False)
+
             goal, error1 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
             inferred_type, error2 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
             normal_form, error3 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
-
-            #goal, error1 = "", False
-            #inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
-            #normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
 
             result = ""
 
@@ -565,12 +563,40 @@ class AgdaKernel(Kernel):
             if not error1 and goal and goal != "":
                 result = f"{goal.strip()} \n{padding}\n"
 
+            # undo file modifications if we created a new hole
+            if new_code != old_code:
+                self.do_execute(old_code, False)
+
             error = error1 and error2 and error3
 
             if error:
-                result = normal_form.strip()
-            else:
-                result = f"{result}{normalisation}"
+                # if there is an error,
+                # run the top-level commands
+                #if result['status'] == 'error' and False:
+
+                self.print(f'goal commands caused an error, runnnig top-level commands')
+
+                # first reload the original code
+                #self.do_execute(old_code, False)
+                #new_code = old_code
+
+                goal, error1 = "", False
+                inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+                normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+
+                error = error2 and error3
+
+                if not error2 and not error3:
+                    normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+                elif not error2:
+                    normalisation = f"{exp.strip()} : {inferred_type.strip()}"
+                elif not error3:
+                    normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
+                else:
+                    result = normal_form.strip()
+                    normalisation = ""
+
+            result = f"{result}{normalisation}"
 
             data = {}
 
@@ -580,10 +606,6 @@ class AgdaKernel(Kernel):
             if result != "":
                 # data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
                 data['text/plain'] = result
-
-            # undo file modifications if we created a new hole
-            if new_code != old_code:
-                self.do_execute(old_code, False)
 
         content = {
             # 'ok' if the request succeeded or 'error', with error information as in all other replies.
