@@ -210,9 +210,10 @@ class AgdaKernel(Kernel):
         self.startAgda()
         fileName = self.getFileName(code)
         dirName = self.getDirName(code)
+        moduleName = self.getModuleName(code)
         absoluteFileName = os.path.abspath(fileName)
 
-        #self.print(f'detected fileName: {fileName}, dirName: {dirName}, while parsing: {code}')
+        self.print(f'detected fileName: {fileName}, dirName: {dirName}, and moduleName: {moduleName}')
         error = False
 
         lines = code.split('\n')
@@ -280,7 +281,7 @@ class AgdaKernel(Kernel):
         holes_as_lines = list(map(lambda x: x[0], holes_as_lines_rel_pos)) 
         #self.print(f'holes_as_lines = {holes_as_lines}')
 
-        user_expressions = {"fileName": absoluteFileName, "holes": holes_as_lines}
+        user_expressions = {"fileName": absoluteFileName, "moduleName": moduleName , "holes": holes_as_lines}
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
