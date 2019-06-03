@@ -215,23 +215,21 @@ class AgdaKernel(Kernel):
 
         preambleLength = 0
 
+        self.notebookName = ""
+        self.cellId = ""
+        self.preamble = ""
+
         if user_expressions:
             # get notebook name
             if "notebookName" in user_expressions:
                 self.notebookName = user_expressions["notebookName"]
-            else:
-                self.notebookName = ""
 
             # get cell id
             if "cellId" in user_expressions:
                 self.cellId = user_expressions["cellId"]
-            else:
-                self.cellId = ""
 
             if "preamble" in user_expressions:
                 self.preamble = user_expressions["preamble"]
-            else:
-                self.preamble = ""
 
         notebookName = self.notebookName
         cellId = self.cellId
@@ -239,7 +237,7 @@ class AgdaKernel(Kernel):
 
         if notebookName == "":
             error = True
-            result = "the cell should be evaluated first"
+            result = "the cell should be evaluated first..."
         else:
             error = False
 
@@ -412,8 +410,7 @@ class AgdaKernel(Kernel):
 
     def runCmd(self, code, cursor_start, cursor_end, exp, cmd):
 
-        #fileName = self.getFileName(code)
-        fileName = self.fileName
+        fileName = self.fileName if hasattr(self, 'fileName') else self.getFileName(code)
         absoluteFileName = os.path.abspath(fileName)
 
         self.print(f"running command: {cmd}")
