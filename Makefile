@@ -8,7 +8,7 @@ $(info CODEMIRROR-AGDA: $(CODEMIRROR-AGDA))
 all: build install codemirror-install # kernel-install
 
 test: build install kernel-install codemirror-install
-	jupyter nbconvert --to notebook --execute example/example.ipynb  --output example-output.ipynb
+	#jupyter nbconvert --to notebook --execute example/Example.ipynb  --output Example-output.ipynb
 	
 pytest: install
 	pytest
