@@ -183,8 +183,8 @@ class AgdaKernel(Kernel):
         for line in lines:
             if bool(re.match(r'module *[a-zA-Z0-9.\-]* *where', line)):
                 # fileName = "tmp/" + re.sub(r"-- *", "", firstLine)
-                moduleName = re.sub(r'module *', "", line)
-                moduleName = re.sub(r' *where *', "", moduleName)
+                moduleName = re.sub(r'module *', "", line) # delete prefix
+                moduleName = re.sub(r' *where.*', "", moduleName) # delete suffix
 
                 return moduleName
 
@@ -213,16 +213,60 @@ class AgdaKernel(Kernel):
         moduleName = self.getModuleName(code)
         absoluteFileName = os.path.abspath(fileName)
 
-        self.print(f'detected fileName: {fileName}, dirName: {dirName}, and moduleName: {moduleName}')
-        error = False
+        preambleLength = 0
 
-        lines = code.split('\n')
-        numLines = len(lines)
+        if user_expressions:
+            # get notebook name
+            if "notebookName" in user_expressions:
+                self.notebookName = user_expressions["notebookName"]
+            else:
+                self.notebookName = ""
 
-        if fileName == "":
-            err = f"*Error*: /directory/???.agda:1,1-{numLines},1\nthe beginning of the cell should contain a line in the format \"module [modulename] where\""
-            result = err
+            # get cell id
+            if "cellId" in user_expressions:
+                self.cellId = user_expressions["cellId"]
+            else:
+                self.cellId = ""
+
+            if "preamble" in user_expressions:
+                self.preamble = user_expressions["preamble"]
+            else:
+                self.preamble = ""
+
+        notebookName = self.notebookName
+        cellId = self.cellId
+        preamble = self.preamble
+
+        if notebookName == "":
+            error = True
+            result = "the cell should be evaluated first"
         else:
+            error = False
+
+        self.print(f'detected fileName: {fileName}, dirName: {dirName}, moduleName: {moduleName}, notebookName: {notebookName}, cellId: {cellId}, preamble: {preamble}')
+
+        # use the provided preamble only if the module name is missing
+        if fileName == "" and not error:
+
+            # if no line \"module [modulename] where\" is provided,
+            # we create a standard one ourselves
+            preambleLength = len(preamble.split("\n")) - 1
+            new_code = preamble + code
+
+            fileName = self.getFileName(new_code)
+            dirName = self.getDirName(new_code)
+            moduleName = self.getModuleName(new_code)
+            absoluteFileName = os.path.abspath(fileName)
+            self.print(f'redetected fileName: {fileName}, dirName: {dirName}, moduleName: {moduleName}, notebookName: {notebookName}, cellId: {cellId}, new code: {new_code}')
+
+            code = new_code
+
+        if not error:
+
+            self.fileName = fileName
+            lines = code.split('\n')
+            numLines = len(lines)
+
             #self.print("file: %s" % fileName)
 
             if dirName != "" and not os.path.exists(dirName):
@@ -259,7 +303,7 @@ class AgdaKernel(Kernel):
             # save the code that was executed
             self.code = code
 
-        if not silent or err != "":
+        if not silent or error != "":
             stream_content = {'name': 'stdout', 'text': result}
             try:
                 self.send_response(self.iopub_socket, 'stream', stream_content)
@@ -277,11 +321,17 @@ class AgdaKernel(Kernel):
         holes_as_lines_rel_pos = list(map(lambda x: self.line_of(code, x), holes_as_positions))
 
         # the first component is the line, the second the relative position within the line;
-        # project to the line number
-        holes_as_lines = list(map(lambda x: x[0], holes_as_lines_rel_pos)) 
+        # project to the line number;
+        # additinally remove the shift possibly caused by the defaul preamble
+        holes_as_lines = list(map(lambda x: x[0] - preambleLength, holes_as_lines_rel_pos)) 
         #self.print(f'holes_as_lines = {holes_as_lines}')
 
-        user_expressions = {"fileName": absoluteFileName, "moduleName": moduleName , "holes": holes_as_lines}
+        user_expressions = {
+            "fileName": absoluteFileName,
+            "moduleName": moduleName,
+            "holes": holes_as_lines,
+            "preambleLength" : preambleLength
+        }
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
@@ -362,14 +412,15 @@ class AgdaKernel(Kernel):
 
     def runCmd(self, code, cursor_start, cursor_end, exp, cmd):
 
-        fileName = self.getFileName(code)
+        #fileName = self.getFileName(code)
+        fileName = self.fileName
         absoluteFileName = os.path.abspath(fileName)
 
         self.print(f"running command: {cmd}")
 
         if fileName == "":
             return "empty filename", True
-        
+
         if (fileName not in self.cells or self.cells[fileName] == "") and cmd != AGDA_CMD_LOAD:
             return "the cell should be evaluated first", True
 
