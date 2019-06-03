@@ -8,8 +8,8 @@ python:
 - 3.6-dev
 - '3.7'
 - 3.7-dev
-- 3.8-dev
-- nightly
+#- 3.8-dev does not work now...
+#- nightly
 
 before_install:
 - sudo apt-get install -y agda-mode agda-stdlib links
