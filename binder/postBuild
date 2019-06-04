@@ -11,10 +11,10 @@ make codemirror-install
 #curl https://gitlab.haskell.org/haskell/ghcup/raw/master/bootstrap-haskell -sSf | sh
 #ghcup install-cabal
 
-cabal new-install cabal-install
-cabal update
-cabal install Agda
-agda-mode setup
+#cabal install Cabal cabal-install
+#cabal update
+#cabal install Agda
+#agda-mode setup
 
 jupyter contrib nbextension install --user
 jupyter nbextension enable --py widgetsnbextension
