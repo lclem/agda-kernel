@@ -8,12 +8,8 @@ make codemirror-install
 
 #pip install agda_kernel
 
-curl https://gitlab.haskell.org/haskell/ghcup/raw/master/bootstrap-haskell -sSf | sh
-
-. "$HOME/.ghcup/env"
-echo '. $HOME/.ghcup/env' >> "$HOME/.bashrc" # or similar
-
-ghcup install-cabal
+#curl https://gitlab.haskell.org/haskell/ghcup/raw/master/bootstrap-haskell -sSf | sh
+#ghcup install-cabal
 
 cabal new-install cabal-install
 cabal update
