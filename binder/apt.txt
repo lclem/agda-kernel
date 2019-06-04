@@ -3,4 +3,4 @@
 #agda-stdlib
 
 ghc
-cabal
+cabal-install
