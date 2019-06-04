@@ -1,6 +1,5 @@
 #!/bin/bash
 
-make local-install
 make kernel-install
 make codemirror-install
 
@@ -9,9 +8,15 @@ make codemirror-install
 
 #pip install agda_kernel
 
-#cabal update
-#cabal install Agda
-#agda-mode setup
+curl https://gitlab.haskell.org/haskell/ghcup/raw/master/bootstrap-haskell -sSf | sh
+
+. "$HOME/.ghcup/env"
+echo '. $HOME/.ghcup/env' >> "$HOME/.bashrc" # or similar
+
+cabal new-install cabal-install
+cabal update
+cabal install Agda
+agda-mode setup
 
 jupyter contrib nbextension install --user
 jupyter nbextension enable --py widgetsnbextension
