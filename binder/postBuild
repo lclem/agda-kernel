@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 make local-install
 make kernel-install
 make codemirror-install
@@ -9,9 +11,9 @@ make codemirror-install
 
 #pip install agda_kernel
 
-#cabal update
-#cabal install Agda
-#agda-mode setup
+cabal update
+cabal install Agda
+agda-mode setup
 
 jupyter contrib nbextension install --user
 jupyter nbextension enable --py widgetsnbextension
