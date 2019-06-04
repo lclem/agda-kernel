@@ -13,6 +13,8 @@ curl https://gitlab.haskell.org/haskell/ghcup/raw/master/bootstrap-haskell -sSf 
 . "$HOME/.ghcup/env"
 echo '. $HOME/.ghcup/env' >> "$HOME/.bashrc" # or similar
 
+ghcup install-cabal
+
 cabal new-install cabal-install
 cabal update
 cabal install Agda
