@@ -1,3 +1,6 @@
 #agda
 #agda-mode
 #agda-stdlib
+
+ghc
+cabal
