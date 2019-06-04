@@ -36,7 +36,7 @@ pip-upload: build
 pip-install:
 	pip install agda_kernel
 
-committ:
+commit:
 	git add 
 
 clean:
