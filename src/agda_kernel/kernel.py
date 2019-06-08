@@ -132,7 +132,7 @@ class AgdaKernel(Kernel):
         #cmd = cmd + "\n"
         self.process.sendline(cmd)
         self.process.expect('Agda2> ')
-        result = str(self.process.before) # str(...) added to make lint happy
+        result = self.process.before # str(...) added to make lint happy
 
         #skip the first line (it's a copy of cmd)
         result = result[result.index('\n')+1:]
@@ -153,6 +153,7 @@ class AgdaKernel(Kernel):
                 tokens = line[start:].split(' ')
                 key = tokens[0]
                 rest = line[start + len(key):]
+                #rest = rest.replace("\\n", "\n")
 
                 # extract all the strings in quotation marks "..."
                 rest = rest.replace("\\\"", "§") # replace \" with §
@@ -218,6 +219,8 @@ class AgdaKernel(Kernel):
         self.notebookName = ""
         self.cellId = ""
         self.preamble = ""
+
+        self.print(f'executing code: {code}')
 
         if user_expressions:
             # get notebook name
@@ -350,7 +353,7 @@ class AgdaKernel(Kernel):
 
     def find_expression(self, code, cursor_pos):
 
-        forbidden = [" ", "\n", "(", ")", "{", "}", ":"]
+        forbidden = [" ", "\n", "(", ")", "{", "}", ":", ";"]
         length = len(code)
 
         hole_left = cursor_pos
@@ -413,7 +416,7 @@ class AgdaKernel(Kernel):
         fileName = self.fileName if hasattr(self, 'fileName') else self.getFileName(code)
         absoluteFileName = os.path.abspath(fileName)
 
-        self.print(f"running command: {cmd}")
+        self.print(f"running command: {cmd}, cursor_start: {cursor_start}, cursor_end: {cursor_end}")
 
         if fileName == "":
             return "empty filename", True
@@ -477,29 +480,30 @@ class AgdaKernel(Kernel):
 
             self.print(f"there is AGDA_INFO_ACTION")
 
-            if AGDA_ALL_DONE in info_action_types:
-                return "OK", False
+            if AGDA_GIVE_ACTION in response: # if there is a give action, it has priority
+
+                result = response[AGDA_GIVE_ACTION]
+                self.print(f"there is AGDA_GIVE_ACTION, with content {result}, and interactionId = {interactionId}")
+
+                if cmd in [AGDA_CMD_GIVE, AGDA_CMD_REFINE_OR_INTRO] and len(result) > 0 and int(result[0]) == interactionId:
+                    self.print(f"got matching hole!")
+
+                    if cmd == AGDA_CMD_GIVE:
+                        return "OK", False
+                    elif cmd == AGDA_CMD_REFINE_OR_INTRO and len(result) > 1 and result[1] != "":
+                        self.print(f"returning: {result[1][0]}")
+                        return deescapify(result[1][0]), False
+                    else:
+                        return "OK", False
             elif AGDA_ALL_GOALS in info_action_types:
 
                 self.print(f"there is AGDA_ALL_GOALS")
 
-                if AGDA_GIVE_ACTION in response: # if there is a give action, it has priority
-
-                    result = response[AGDA_GIVE_ACTION]
-                    self.print(f"there is AGDA_GIVE_ACTION, with content {result}, and interactionId = {interactionId}")
-
-                    if cmd in [AGDA_CMD_GIVE, AGDA_CMD_REFINE_OR_INTRO] and len(result) > 0 and int(result[0]) == interactionId:
-                        self.print(f"got matching hole!")
-
-                        if cmd == AGDA_CMD_GIVE:
-                            return "OK", False
-                        elif cmd == AGDA_CMD_REFINE_OR_INTRO and len(result) > 1 and result[1] != "":
-                            return result[1], False
-                        else:
-                            return "OK", False
-
                 goals = "".join([deescapify(item[1]) if item[0] == AGDA_ALL_GOALS else "" for item in response[AGDA_INFO_ACTION]])
+                self.print(f"deescapified goals: {goals}")
                 return goals, False
+            elif AGDA_ALL_DONE in info_action_types:
+                return "OK", False
             elif any(x in AGDA_ERROR_LIKE for x in info_action_types):
                 info_action_message = "".join([f"{item[0]}: {deescapify(item[1])}" if item[0] in AGDA_ERROR_LIKE else "" for item in response[AGDA_INFO_ACTION]])
 
@@ -558,7 +562,7 @@ class AgdaKernel(Kernel):
             self.print(f'{result}')
         else:
 
-            self.print(f'cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
+            self.print(f'do_inspect cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
 
             exp = ""
 
@@ -577,6 +581,8 @@ class AgdaKernel(Kernel):
                     return {'status': 'ok', 'found': True, 'data': {'text/plain': 'load the cell first'}, 'metadata': {}}
             # we are not in a selection, or an error above occurred
             else: # if exp == "":
+                self.do_execute(code, False)
+                self.code = code
                 cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
                 cursor_start += 1
             
@@ -594,7 +600,7 @@ class AgdaKernel(Kernel):
 
             if exp != "?":
                 exp = exp[2:-2] # strip the initial "{!" and final "!}"
-                self.log.debug(f'considering inside exp: {exp}')
+                self.print(f'considering inside exp: {exp}')
 
             self.print(f'considering exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
 
@@ -744,6 +750,13 @@ class AgdaKernel(Kernel):
             '𝟭' : '₁',
             '₁' : '1',
             '2' : '₂',
+            '3' : '₃',
+            '4' : '₄',
+            '5' : '₅',
+            '6' : '₆',
+            '7' : '₇',
+            '8' : '₈',
+            '9' : '₉',
             '+' : '⨁',
             '~' : '≈',
             'x' : '×',
@@ -763,7 +776,12 @@ class AgdaKernel(Kernel):
             ')' : '⟭',
             'b' : 'ᵇ',
             'empty' : '∅',
-            '|-' : '⊢'
+            '|-' : '⊢',
+            'cup' : '⊔',
+            'l' : 'ℓ',
+            'op' : 'ᵒᵖ',
+            '{{' : '⦃',
+            '}}' : '⦄'
         }
 
         other_half = {val : key for (key, val) in half_subst.items() if val not in list(half_subst.keys())}
@@ -912,7 +930,7 @@ class AgdaKernel(Kernel):
             elif code[i:i+2] in ["(?"]:
                 holes.append((i+1, i+2))
                 i += 2
-            elif code[i:i+2] in ["?)"]:
+            elif code[i:i+2] in ["?)", "?;"]:
                 holes.append((i, i+1))
                 i += 1
             elif code[i:i+3] in [" ?\n", " ? ", "(?)"] or (code[i:i+2] == " ?" and i+2 == length):
