@@ -58,6 +58,10 @@ class AgdaKernel(Kernel):
 
     agda_version = ""
 
+    notebookName = ""
+    cellId = ""
+    preamble = ""
+
     '''
     _banner = None
 
@@ -216,14 +220,11 @@ class AgdaKernel(Kernel):
 
         preambleLength = 0
 
-        self.notebookName = ""
-        self.cellId = ""
-        self.preamble = ""
-
+        self.print(f'user_expressions: {user_expressions}')
         self.print(f'executing code: {code}')
 
         if user_expressions:
-            # get notebook name
+            # get notebook name (if any)
             if "notebookName" in user_expressions:
                 self.notebookName = user_expressions["notebookName"]
 
@@ -238,11 +239,12 @@ class AgdaKernel(Kernel):
         cellId = self.cellId
         preamble = self.preamble
 
-        if notebookName == "":
-            error = True
-            result = "the cell should be evaluated first..."
-        else:
-            error = False
+        #if notebookName == "":
+        #    error = True
+        #    self.print(f'empty notebook name!')
+        #    result = "the cell should be evaluated first..."
+        #else:
+        error = False
 
         self.print(f'detected fileName: {fileName}, dirName: {dirName}, moduleName: {moduleName}, notebookName: {notebookName}, cellId: {cellId}, preamble: {preamble}')
 
@@ -331,7 +333,8 @@ class AgdaKernel(Kernel):
             "fileName": absoluteFileName,
             "moduleName": moduleName,
             "holes": holes_as_lines,
-            "preambleLength" : preambleLength
+            "preambleLength" : preambleLength,
+            "isError": error
         }
 
         return {'status': 'ok' if not error else 'error',
