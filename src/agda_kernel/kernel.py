@@ -598,8 +598,10 @@ class AgdaKernel(Kernel):
                 old_code = self.code
                 self.print(f'new_code: {new_code}')
                 cursor_start, cursor_end, exp = self.find_expression(new_code, cursor_start)
+                inHole = False
             else:
                 new_code = old_code = self.code
+                inHole = True
 
             if exp != "?":
                 exp = exp[2:-2] # strip the initial "{!" and final "!}"
@@ -630,6 +632,8 @@ class AgdaKernel(Kernel):
 
             if not error1 and goal and goal != "":
                 result = f"{goal.strip()} \n{padding}\n"
+            else:
+                result = f"{normal_form.strip()}" # this contains the error message
 
             # undo file modifications if we created a new hole
             if new_code != old_code:
@@ -638,31 +642,32 @@ class AgdaKernel(Kernel):
             error = error1 and error2 and error3
 
             if error:
-                # if there is an error,
-                # run the top-level commands
-                #if result['status'] == 'error' and False:
+                if not inHole:
+                    # if there is an error and we are not in a hole,
+                    # run the top-level commands
+                    #if result['status'] == 'error' and False:
 
-                self.print(f'goal commands caused an error, runnnig top-level commands')
+                    self.print(f'goal commands caused an error, runnnig top-level commands')
 
-                # first reload the original code
-                #self.do_execute(old_code, False)
-                #new_code = old_code
+                    # first reload the original code
+                    #self.do_execute(old_code, False)
+                    #new_code = old_code
 
-                goal, error1 = "", False
-                inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
-                normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+                    goal, error1 = "", False
+                    inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+                    normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
 
-                error = error2 and error3
+                    error = error2 and error3
 
-                if not error2 and not error3:
-                    normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
-                elif not error2:
-                    normalisation = f"{exp.strip()} : {inferred_type.strip()}"
-                elif not error3:
-                    normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
-                else:
-                    result = normal_form.strip()
-                    normalisation = ""
+                    if not error2 and not error3:
+                        normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+                    elif not error2:
+                        normalisation = f"{exp.strip()} : {inferred_type.strip()}"
+                    elif not error3:
+                        normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
+                    else:
+                        result = normal_form.strip()
+                        normalisation = ""
 
             result = f"{result}{normalisation}"
 
@@ -699,6 +704,8 @@ class AgdaKernel(Kernel):
             '<=<>' : '≤⟨⟩',
             '<==<>' : '≤≡⟨⟩',
             '=<>' : '≡⟨⟩',
+            '-><>' : '↝<>',
+            '->*<>' : '↝*<>',
             'top' : '⊤',
             'bot' : '⊥',
             'neg' : '¬',
