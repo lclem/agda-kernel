@@ -2,13 +2,8 @@
 #agda-mode
 #agda-stdlib
 
-ghc6
-ghc6-prof
-ghc6-doc
+ghc
 cabal-install
 
 zlib1g-dev
 libncurses5-dev
-
-#ghc
-#cabal-install
