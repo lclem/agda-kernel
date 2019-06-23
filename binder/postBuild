@@ -1,5 +1,11 @@
 #!/bin/bash
 
+cabal update
+cabal install alex
+cabal install happy
+cabal install Agda
+agda-mode setup
+
 make kernel-install
 make codemirror-install
 
