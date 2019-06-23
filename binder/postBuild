@@ -4,13 +4,13 @@ cabal update
 cabal install alex
 cabal install happy
 cabal install Agda
-agda-mode setup
 
 make kernel-install
 make codemirror-install
 
-#sudo apt-get install agda-mode
-#sudo apt-get install agda-stdlib
+sudo apt-get install agda-mode
+sudo apt-get install agda-stdlib
+agda-mode setup
 
 #pip install agda_kernel
 
