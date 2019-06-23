@@ -8,6 +8,8 @@
 # agda-kernel
 An experimental Agda kernel for Jupyter.
 
+![](demo/demo1.gif)
+
 Installation
 ------------
 
