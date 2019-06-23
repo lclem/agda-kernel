@@ -10,6 +10,7 @@ An experimental Agda kernel for Jupyter.
 
 ![](demo/demo1.gif)
 
+
 Installation
 ------------
 
@@ -38,6 +39,11 @@ Then,
     mkdir -p dir/notebook/static/components/codemirror/mode/agda
     cp codemirror-agda/agda.js dir/notebook/static/components/codemirror/mode/agda
 -->
+
+### Agda extension
+
+In order to improve the Jupyter interface,
+it is strongly recommended to also install [`agda-extension`](https://github.com/lclem/jupyter_contrib_nbextensions).
 
 Functionality
 -------------
