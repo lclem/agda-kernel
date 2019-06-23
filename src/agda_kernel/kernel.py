@@ -594,7 +594,7 @@ class AgdaKernel(Kernel):
             # if we are not in a hole,
             # create an artificial hole around the current selection and reload
             if not self.isHole(exp):
-                new_code = self.code[:cursor_start] + "{! " + exp + " !}" + self.code[cursor_end:]
+                new_code = self.code[:cursor_start-1] + "{! " + exp + " !}" + self.code[cursor_end:]
                 old_code = self.code
                 self.print(f'new_code: {new_code}')
                 cursor_start, cursor_end, exp = self.find_expression(new_code, cursor_start)
@@ -721,6 +721,8 @@ class AgdaKernel(Kernel):
             '=>' : '⇒',
             '<' : '⟨',
             '>' : '⟩', # it is important that this comes after ->
+            '⟩' : '≻',
+            '≻' : '>',
             'forall' : '∀',
             'exists' : '∃',
             'A' : '𝔸',
@@ -734,6 +736,8 @@ class AgdaKernel(Kernel):
             '/=' : '≢',
             'leq' : '≤',
             '<=' : '≤',
+            'geq' : '≥',
+            '>=' : '≥',
             '=' : '≡',
             '[=' : '⊑',
             'alpha' : 'α',
@@ -741,6 +745,7 @@ class AgdaKernel(Kernel):
             'gamma' : 'γ',
             'rho' : 'ρ',
             'e' : 'ε',
+            'mu' : 'μ',
             'xor' : '⊗',
             'emptyset' : '∅',
             'qed' : '∎',
