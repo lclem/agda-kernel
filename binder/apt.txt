@@ -1,6 +1,11 @@
-agda
-agda-mode
-agda-stdlib
+#agda
+#agda-mode
+#agda-stdlib
+
+ghc6
+ghc6-prof
+ghc6-doc
+cabal-install
 
 #ghc
 #cabal-install
