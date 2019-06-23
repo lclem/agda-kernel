@@ -64,7 +64,7 @@ If there is more than one result, the first ten of them are presented for the us
 - Refine the current goal by putting the cursor next to a goal `{! !}` and hitting TAB.
 An optional variable can be provided for case-splitting `{! m !}`.
 
-- Infer the type of a goal/literal, but putting the cursor near a goal/literal and hitting SHIFT-TAB.
+- Show information about the current context, goal, etc.: {utting the cursor near a goal/literal and hit SHIFT-TAB.
 <!--If the expression is in parentheses ``(...)``, then the cursor should be near one of the two parentheses.
 If the expression is just a literal, then the cursor should be inside, or in the vicinity of the literal.
 
