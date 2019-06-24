@@ -67,7 +67,7 @@ it is strongly recommended to also install [`agda-extension`](https://github.com
 Functionality
 -------------
 
-Each code cell must contain with a line of the form ``module A.B.C where``.
+Each code cell must contain a line of the form ``module A.B.C where``.
 For instance:
 
 ```agda
