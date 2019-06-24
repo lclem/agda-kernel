@@ -86,11 +86,13 @@ Examples
 
 You can launch the following examples directly via the mybinder interface:
 
-- [example/Lab01.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab01.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab01.ipynb).
+<!-- - [example/Lab01.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab01.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab01.ipynb).
 
 - [example/Lab02.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab02.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab02.ipynb).
 
 - [example/Lab03.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab03.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab03.ipynb).
+
+-->
 
 - [example/LabImp.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/LabImp.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=example/LabImp.ipynb).
 
