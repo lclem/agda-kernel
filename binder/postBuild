@@ -3,7 +3,7 @@
 cabal update
 cabal install alex
 cabal install happy
-cabal install Agda
+cabal install Agda-2.6.0
 
 make kernel-install
 make codemirror-install
