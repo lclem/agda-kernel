@@ -12,6 +12,8 @@ sudo apt-get install agda-mode
 sudo apt-get install agda-stdlib
 agda-mode setup
 
+export PATH=$PATH:$HOME/.cabal/bin/
+
 #pip install agda_kernel
 
 #curl https://gitlab.haskell.org/haskell/ghcup/raw/master/bootstrap-haskell -sSf | sh
