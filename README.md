@@ -10,6 +10,26 @@ An experimental Agda kernel for Jupyter.
 
 ![](demo/demo1.gif)
 
+Examples
+--------
+
+You can launch the following examples directly via the mybinder interface:
+
+<!-- - [example/Lab01.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab01.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab01.ipynb).
+
+- [example/Lab02.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab02.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab02.ipynb).
+
+- [example/Lab03.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab03.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab03.ipynb).
+
+-->
+
+- [example/LabImp.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/LabImp.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=example/LabImp.ipynb).
+
+Alternatively, if you have [binder](https://github.com/jupyterhub/binderhub),
+then you can use [repo2docker](https://github.com/jupyter/repo2docker) locally:
+
+    repo2docker https://github.com/lclem/agda-kernel
+
 Installation
 ------------
 
@@ -79,21 +99,6 @@ If the expression is just a literal, then the cursor should be inside, or in the
 by putting the cursor near the expression and hitting TAB.
 Expression localisation follows the same rules as in the previous point.
 -->
-
-Examples
---------
-
-You can launch the following examples directly via the mybinder interface:
-
-<!-- - [example/Lab01.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab01.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab01.ipynb).
-
-- [example/Lab02.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab02.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab02.ipynb).
-
-- [example/Lab03.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/Lab03.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=/example/Lab03.ipynb).
-
--->
-
-- [example/LabImp.ipynb](https://github.com/lclem/agda-kernel/blob/master/example/LabImp.ipynb) [[binder]](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=example/LabImp.ipynb).
 
 Editing
 -------
