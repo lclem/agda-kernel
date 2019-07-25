@@ -79,11 +79,9 @@ class AgdaKernel(Kernel):
     firstTime = True
 
     def startAgda(self):
-
         if self.firstTime:
             self.process.expect('Agda2> ')
             self.firstTime = False
-
         return
 
     def __init__(self, **kwargs):
@@ -553,146 +551,129 @@ class AgdaKernel(Kernel):
 
         return str(response), True
 
+    def get_expression(self, code, cursor_pos):
+
+        if len(code) < len(self.code):
+            # we are in a selection and the cursor is at the beginning of the selection
+            if  cursor_pos + len(code) <= len(self.code) and self.code[cursor_pos:cursor_pos+len(code)] == code:
+                #self.print(f'we are in a selected text, cursor at the beginning')
+                cursor_start, cursor_end, exp = cursor_pos, cursor_pos + len(code), code
+            # we are in a selection and the cursor is at the end of the selection
+            elif cursor_pos - len(code) >= 0 and cursor_pos <= len(self.code) and self.code[cursor_pos-len(code):cursor_pos] == code:
+                #self.print(f'we are in a selected text, cursor at the end')
+                cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
+            else:
+                error = True
+                self.print(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
+                #return {'status': 'ok', 'found': True, 'data': {'text/plain': 'load the cell first'}, 'metadata': {}}
+        # we are not in a selection, or an error above occurred
+        else: # if exp == "":
+            cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
+            #cursor_start += 1
+        
+        return cursor_start, cursor_end, exp
+
+    def infer_top_level(self, cursor_start, cursor_end, exp):
+
+        inferred_type, error2 = self.runCmd(self.code, cursor_start, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
+        normal_form, error3 = self.runCmd(self.code, cursor_start, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
+
+        error = error2 and error3
+
+        if not error:
+            result = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+        elif not error2:
+            result = f"{exp.strip()} : {inferred_type.strip()}"
+        elif not error3:
+            result = f"Eval: {exp.strip()} --> {normal_form.strip()}"
+        else: # this is an error message
+            result = normal_form.strip()
+
+        return error, f"{result}"
+
+    def infer_local(self, cursor_start, cursor_end, exp):
+
+        goal, error1 = self.runCmd(self.code, cursor_start, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
+        inferred_type, error2 = self.runCmd(self.code, cursor_start, cursor_end, exp, AGDA_CMD_INFER)
+        normal_form, error3 = self.runCmd(self.code, cursor_start, cursor_end, exp, AGDA_CMD_COMPUTE)
+
+        result = ""
+
+        #self.print(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
+
+        if not error2 and not error3:
+            normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+        elif not error2:
+            normalisation = f"{exp.strip()} : {inferred_type.strip()}"
+        elif not error3:
+            normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
+        else:
+            normalisation = ""
+
+        padding = "=" * len(normalisation)
+
+        if not error1 and goal and goal != "":
+            result = f"{goal.strip()} \n{padding}\n"
+        else:
+            return True, f"{normal_form.strip()}" # this contains the error message
+
+        return False, result
+
     # get the type of the current expression
     # triggered by SHIFT+TAB
     # code is either the current selection, or the whole cell otherwise
     # cursor_pos is always at the beginning or at the end of the selection;
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
-        if self.code == "":
-            error = True
-            result = "must load the cell first"
-            self.print(f'{result}')
-        else:
+        self.print(f'do_inspect cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: "{self.code}" of length {len(self.code)}')
 
-            self.print(f'do_inspect cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: {self.code} of length "{len(self.code)}"')
+        if self.code == "" or not code in self.code:
+            return {'status': 'error', 'found': True, 'data': {'text/plain': "must load the cell first"}}
 
-            exp = ""
+        # load the code to check that there are no errors
+        response = self.do_execute(self.code, False)
 
-            #we are in a selection
-            if len(code) < len(self.code):
-                # we are in a selection and the cursor is at the beginning of the selection
-                if  cursor_pos + len(code) <= len(self.code) and self.code[cursor_pos:cursor_pos+len(code)] == code:
-                    self.print(f'we are in a selected text, cursor at the beginning')
-                    cursor_start, cursor_end, exp = cursor_pos, cursor_pos + len(code), code
-                # we are in a selection and the cursor is at the end of the selection
-                elif cursor_pos - len(code) >= 0 and cursor_pos <= len(self.code) and self.code[cursor_pos-len(code):cursor_pos] == code:
-                    self.print(f'we are in a selected text, cursor at the end')
-                    cursor_start, cursor_end, exp = cursor_pos - len(code), cursor_pos, code
-                else:
-                #    self.print(f'no other case possible: the cursor is either at the beginning or at the end of a selection')
-                    return {'status': 'ok', 'found': True, 'data': {'text/plain': 'load the cell first'}, 'metadata': {}}
-            # we are not in a selection, or an error above occurred
-            else: # if exp == "":
-                self.do_execute(code, False)
-                self.code = code
-                cursor_start, cursor_end, exp = self.find_expression(code, cursor_pos)
-                cursor_start += 1
-            
-            self.print(f'current exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+        if response['status'] == 'error':
+            return {'status': 'error', 'found': False, 'data': {'text/plain': "unable to inspect, the code contain errors"}}
 
-            # if we are not in a hole,
-            # create an artificial hole around the current selection and reload
-            if not self.isHole(exp):
-                new_code = self.code[:cursor_start-1] + "{! " + exp + " !}" + self.code[cursor_end:]
-                old_code = self.code
-                self.print(f'new_code: {new_code}')
-                cursor_start, cursor_end, exp = self.find_expression(new_code, cursor_start)
-                inHole = False
+        cursor_start, cursor_end, exp = self.get_expression(code, cursor_pos)            
+        # self.print(f'current exp: "{exp}", pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+
+        old_code = self.code
+
+        # if we are not in a hole, try the top level inspection first
+        if not self.isHole(exp):
+            error, result = self.infer_top_level(cursor_start, cursor_end, exp)
+            if not error:
+                return {'status': 'ok', 'found': True, 'data': {'text/plain': result}}
             else:
-                new_code = old_code = self.code
-                inHole = True
+                # if we are not in a hole,
+                # create an artificial hole around the current selection and reload
+                self.code = self.code[:cursor_start-1] + "{! " + exp + " !}" + self.code[cursor_end:]
+                #self.print(f'new_code: {self.code}')
+                response = self.do_execute(self.code, False)
 
-            if exp != "?":
-                exp = exp[2:-2] # strip the initial "{!" and final "!}"
-                self.print(f'considering inside exp: {exp}')
+                # adding the hole creates an error
+                if response['status'] == 'error':
+                    self.print(f'unexpected error when adding temporary hole: {response}')
 
-            self.print(f'considering exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+                cursor_start, cursor_end, exp = self.find_expression(self.code, cursor_start)
 
-            self.do_execute(new_code, False)
+        # at this point we are in a hole,
+        # either the original one, or the one we created
+        if exp != "?":
+            exp = exp[2:-2] # strip the initial "{!" and final "!}"
+            #self.print(f'considering inside exp: {exp}')
 
-            goal, error1 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_GOAL_TYPE_CONTEXT_INFER)
-            inferred_type, error2 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER)
-            normal_form, error3 = self.runCmd(new_code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE)
+        #self.print(f'considering exp: {exp}, pos: {cursor_pos}, start: {cursor_start}, end: {cursor_end}')
+        error, result = self.infer_local(cursor_start, cursor_end, exp)
 
-            result = ""
+        # undo file modifications if we created a new hole
+        if self.code != old_code:
+            self.code = old_code
+            self.do_execute(self.code, False)
 
-            self.print(f'gathered: error1 = {error1}, error2 = {error2}, error3 = {error3}')
-
-            if not error2 and not error3:
-                normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
-            elif not error2:
-                normalisation = f"{exp.strip()} : {inferred_type.strip()}"
-            elif not error3:
-                normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
-            else:
-                normalisation = ""
-
-            padding = "=" * len(normalisation)
-
-            if not error1 and goal and goal != "":
-                result = f"{goal.strip()} \n{padding}\n"
-            else:
-                result = f"{normal_form.strip()}" # this contains the error message
-
-            # undo file modifications if we created a new hole
-            if new_code != old_code:
-                self.do_execute(old_code, False)
-
-            error = error1 and error2 and error3
-
-            if error:
-                if not inHole:
-                    # if there is an error and we are not in a hole,
-                    # run the top-level commands
-                    #if result['status'] == 'error' and False:
-
-                    self.print(f'goal commands caused an error, runnnig top-level commands')
-
-                    # first reload the original code
-                    #self.do_execute(old_code, False)
-                    #new_code = old_code
-
-                    goal, error1 = "", False
-                    inferred_type, error2 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_INFER_TOPLEVEL)
-                    normal_form, error3 = self.runCmd(self.code, cursor_pos, cursor_end, exp, AGDA_CMD_COMPUTE_TOPLEVEL)
-
-                    error = error2 and error3
-
-                    if not error2 and not error3:
-                        normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
-                    elif not error2:
-                        normalisation = f"{exp.strip()} : {inferred_type.strip()}"
-                    elif not error3:
-                        normalisation = f"Eval: {exp.strip()} --> {normal_form.strip()}"
-                    else:
-                        result = normal_form.strip()
-                        normalisation = ""
-
-            result = f"{result}{normalisation}"
-
-            data = {}
-
-            error = False
-            self.print(f'result: {result}')
-            
-            if result != "":
-                # data['text/html'] = "<a href=\"http://somegreatsite.com\">Link Name</a> <p>" + result + "</p>"
-                data['text/plain'] = result
-
-        content = {
-            # 'ok' if the request succeeded or 'error', with error information as in all other replies.
-            'status' : 'error' if error else 'ok',
-
-            # found should be true if an object was found, false otherwise
-            'found' : True if not error and result != "" else False,
-
-            # data can be empty if nothing is found
-            'data' : {} if error else data,
-            'metadata' : {}
-        }
-
-        return content
+        return {'status': 'error' if error else 'ok', 'found': True, 'data': {'text/plain': result}}
 
     # handle unicode completion here
     def do_complete(self, code, cursor_pos):

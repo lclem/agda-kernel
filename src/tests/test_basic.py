@@ -161,3 +161,89 @@ def test_getModuleName_4(kernel):
 #    code = "module test where\nh : {A : Set} → A → A → A\nh x y = ?"
 #    kernel.do_execute(code, False)
 #    assert kernel.do_complete(code, 52)['matches'] == ["y", "x"]
+
+def test_get_expression_1(kernel): # selection
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}"
+    assert (19, 24, "proj1") == kernel.get_expression("proj1", 24)
+
+# beginning of the line
+
+def test_get_expression_2(kernel): # cursor inside the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}"
+    assert (19, 24, "proj1") == kernel.get_expression(kernel.code, 20)
+
+def test_get_expression_3(kernel): # cursor at the end of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}"
+    assert (19, 24, "proj1") == kernel.get_expression(kernel.code, 24)
+
+def test_get_expression_4(kernel): # cursor at the beginning of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}"
+    assert (19, 24, "proj1") == kernel.get_expression(kernel.code, 19)
+
+# end of the line
+
+def test_get_expression_5(kernel): # cursor at the beginning of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (116, 121, "proj1") == kernel.get_expression(kernel.code, 116)
+
+def test_get_expression_6(kernel): # cursor in the middle of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (116, 121, "proj1") == kernel.get_expression(kernel.code, 118)
+
+def test_get_expression_7(kernel): # cursor at the end of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (116, 121, "proj1") == kernel.get_expression(kernel.code, 121)
+
+def test_get_expression_8(kernel): # selection (cursor at the end)
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (116, 121, "proj1") == kernel.get_expression("proj1", 121)
+
+def test_get_expression_8_1(kernel): # selection (cursor at the beginning)
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (116, 121, "proj1") == kernel.get_expression("proj1", 116)
+
+# end of the file
+
+def test_get_expression_9(kernel): # selection
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (167, 172, "proj1") == kernel.get_expression(kernel.code, 172)
+
+def test_get_expression_10(kernel): # cursor at the beginning of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (167, 172, "proj1") == kernel.get_expression(kernel.code, 167)
+
+def test_get_expression_11(kernel): # cursor in the middle of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (167, 172, "proj1") == kernel.get_expression(kernel.code, 170)
+
+def test_get_expression_12(kernel): # cursor at the end of the word
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1\n\nproj'' : ∀ {A B : Set} → A → B → A\nproj'' = proj1"
+    assert (167, 172, "proj1") == kernel.get_expression(kernel.code, 172)
+
+# various errors
+
+def test_do_inspect_0(kernel): # file not loaded
+    kernel.code = ""
+    assert kernel.do_inspect(kernel.code, 172)['status'] == 'error'
+
+def test_do_inspect_1(kernel): # code doesn't load because of an error
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = "
+    assert kernel.do_inspect(kernel.code, 5)['status'] == 'error'
+
+# ok
+
+def test_do_inspect_2(kernel):
+    #kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1"
+    #result = kernel.do_inspect("proj1", 24)
+    #assert result['status'] == 'ok' and result['found'] == True
+    assert True
+
+@pytest.mark.timeout(5)
+@pytest.mark.timeout(method='signal')
+def test_do_inspect_3(kernel):
+    kernel.__init__()
+    kernel.startAgda()
+    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1"
+    #result = kernel.do_inspect(kernel.code, 24)
+    #assert result['status'] == 'ok' and result['found'] == True
+    assert True
