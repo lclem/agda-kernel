@@ -291,7 +291,7 @@ class AgdaKernel(Kernel):
                 agdai = fileName + "i"
                 os.remove(agdai)
             except:
-                print("*.agdai file not found")
+                self.print("*.agdai file '%s' not found" % agdai)
 
         # self.print("output: %s" % result)
 
