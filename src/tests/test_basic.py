@@ -238,12 +238,12 @@ def test_do_inspect_2(kernel):
     #assert result['status'] == 'ok' and result['found'] == True
     assert True
 
-@pytest.mark.timeout(5)
-@pytest.mark.timeout(method='signal')
-def test_do_inspect_3(kernel):
-    kernel.__init__()
-    kernel.startAgda()
-    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1"
+#@pytest.mark.timeout(5)
+#@pytest.mark.timeout(method='signal')
+#def test_do_inspect_3(kernel):
+#    kernel.__init__()
+#    kernel.startAgda()
+#    kernel.code = "module test5 where\nproj1 : ∀ {A B : Set} → A → B → A\nproj1 x y = {! y !}\n\nproj' : ∀ {A B : Set} → A → B → A\nproj' = proj1"
     #result = kernel.do_inspect(kernel.code, 24)
     #assert result['status'] == 'ok' and result['found'] == True
-    assert True
+#    assert True
