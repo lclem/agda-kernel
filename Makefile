@@ -1,6 +1,8 @@
 .PHONY: clean all build install kernel-install test
 
-SITE-PACKAGES = $(shell pip show notebook | grep Location | cut -d ' ' -f 2)
+PIP=pip3
+PYTHON=python3.7
+SITE-PACKAGES = $(shell $(PIP) show notebook | grep Location | cut -d ' ' -f 2)
 CODEMIRROR = $(SITE-PACKAGES)/notebook/static/components/codemirror
 CODEMIRROR-AGDA = $(CODEMIRROR)/mode/agda
 $(info CODEMIRROR-AGDA: $(CODEMIRROR-AGDA))
@@ -17,24 +19,24 @@ build: dist/agda_kernel-0.62-py3-none-any.whl
 
 dist/agda_kernel-0.62-py3-none-any.whl: setup.py src/agda_kernel/install.py src/agda_kernel/kernel.py
 #	pylint src/agda_kernel/kernel.py
-	python setup.py bdist_wheel
+	$(PYTHON) setup.py bdist_wheel
 
 install: build
 	pip install .
 
 # run after the agda_kernel module is installed
 kernel-install: install
-	python -m agda_kernel.install
+	$(PYTHON) -m agda_kernel.install
 
 codemirror-install: codemirror-agda/agda.js
 	mkdir -p $(CODEMIRROR-AGDA)
 	cp codemirror-agda/agda.js $(CODEMIRROR-AGDA)
 
 pip-upload: build
-	python -m twine upload dist/*
+	$(PYTHON) -m twine upload dist/*
 
 pip-install:
-	pip install agda_kernel
+	$(PIP) install agda_kernel
 
 commit:
 	git add 
