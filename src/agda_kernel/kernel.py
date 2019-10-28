@@ -126,14 +126,14 @@ class AgdaKernel(Kernel):
 
     def interact(self, cmd):
 
-        self.print("Telling Agda: %s" % cmd)
-        
+        self.print("Interacting with Agda: %s" % cmd)
+
         #cmd = cmd.encode() # create a byte representation
         #result = self.process.communicate(input=cmd)[0]
 
         #cmd = cmd + "\n"
         self.process.sendline(cmd)
-        self.process.expect('Agda2> ')
+        self.process.expect('Agda2> ', timeout=120)
         result = self.process.before # str(...) added to make lint happy
 
         #skip the first line (it's a copy of cmd)
@@ -291,7 +291,7 @@ class AgdaKernel(Kernel):
                 agdai = fileName + "i"
                 os.remove(agdai)
             except:
-                print("*.agdai file not found")
+                self.print("*.agdai file '%s' not found" % agdai)
 
         # self.print("output: %s" % result)
 
