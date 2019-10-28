@@ -1,7 +1,7 @@
 .PHONY: clean all build install kernel-install test
 
 PIP=pip3
-PYTHON=python3.7
+PYTHON=python3
 SITE-PACKAGES = $(shell $(PIP) show notebook | grep Location | cut -d ' ' -f 2)
 CODEMIRROR = $(SITE-PACKAGES)/notebook/static/components/codemirror
 CODEMIRROR-AGDA = $(CODEMIRROR)/mode/agda
