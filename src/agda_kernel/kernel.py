@@ -759,6 +759,7 @@ class AgdaKernel(Kernel):
             'o' : '∘',
             'phi' : 'φ',
             'psi' : 'ψ',
+            'xi' : 'ξ',
             #'??' : "{! !}",
             'iff' : '⟺',
             'w'  : 'ω ',
@@ -773,6 +774,8 @@ class AgdaKernel(Kernel):
             'b' : 'ᵇ',
             'empty' : '∅',
             '|-' : '⊢',
+            'models' : '⊨',
+            '|=' : '⊨',
             'cup' : '⊔',
             'l' : 'ℓ',
             'op' : 'ᵒᵖ',
@@ -828,17 +831,12 @@ class AgdaKernel(Kernel):
                     k += 1
                 """
                 options = "-m -l" # list solutions
+                self.print(f'Agsy options are: {options}')
                 result, error = self.runCmd(code, cursor_start, cursor_end, options, AGDA_CMD_AUTOONE if self.agda_version >= "2.5.4" else AGDA_CMD_AUTO)
                 self.print(f'result is: {result}, error is: {error}')
 
                 if result.find("Listing solution(s)") != -1:
-                    # example: Listing solution(s) 20-29\n20  f (f a left left) y x\n21  f (f a right left) y x\n22  f (f a left right) y x\n23  f (f a right right) y x\n24  f (f a left left) x x\n25  f (f a right left) x x\n26  f (f a left right) x x\n27  f (f a right right) x x\n28  f a (f a y y) y\n29  f a (f a x y) y\n
-                    lines = result.split('\n')[1:-1] # skip the first and last lines
-                    for line in lines:
-                        tokens = line.split(' ') 
-                        self.print(f"line is: {line}, tokens is: {tokens}")
-                        solution = " ".join(tokens[2:]) # skip the first "20  " (plus the extra space!) and put the tokens back
-                        matches += [solution]
+                    matches += self.listing_solution_parser(result)
                 elif error or result in ["No solution found", "No candidate found", "No solution found after timeout (1000ms)"]:
                      matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
                 else:
@@ -853,7 +851,7 @@ class AgdaKernel(Kernel):
                 self.print(f'AGDA_CMD_GIVE, result: {result}, error: {error}')
 
                 if error:
-                    # second, try to automatically refine the current
+                    # second, try to automatically refine the current contents
                     result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_REFINE_OR_INTRO)
 
                     if error: # try case
@@ -898,6 +896,17 @@ class AgdaKernel(Kernel):
         return {'matches': matches, 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': {},
                 'status': 'ok' if not error else 'error'}
+
+    def listing_solution_parser(self, str):
+        # example: Listing solution(s) 0-9\n0  cong suc (+-assoc m n p)\n1  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m p p)) ⟩\nsuc (m + (n + p)) ∎\n2  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m p n)) ⟩\nsuc (m + (n + p)) ∎\n3  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m p m)) ⟩\nsuc (m + (n + p)) ∎\n4  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m n p)) ⟩\nsuc (m + (n + p)) ∎\n5  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m n n)) ⟩\nsuc (m + (n + p)) ∎\n6  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m n m)) ⟩\nsuc (m + (n + p)) ∎\n7  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m m p)) ⟩\nsuc (m + (n + p)) ∎\n8  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m m n)) ⟩\nsuc (m + (n + p)) ∎\n9  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m m m)) ⟩\nsuc (m + (n + p)) ∎\n
+        solutions = re.split('\n[0-9]+ +', str)[1:] # skip the first line
+
+        # need to insert two extra space for multiline solutions in order to preserve indentation
+        solutions = [ '\n  '.join(re.split('\n', solution)) for solution in solutions] 
+        
+        self.print(f"solutions is: {solutions}")
+        #    solution = " ".join(tokens[2:]) # skip the first "20  " (plus the extra space!) and put the tokens back
+        return solutions
 
     def findAllHoles(self, code):
         i = 0
