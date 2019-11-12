@@ -31,8 +31,12 @@ after_script:
 
 # Push the results back to codecov
 after_success:
-  - codecov
-  
+  - codecov  
+  # attempt to update mybinder
+  - wget https://github.com/browsh-org/browsh/releases/download/v1.6.4/browsh_1.6.4_linux_amd64
+  - mv browsh_1.6.4_linux_amd64 browsh && chmod a+x browsh
+  - browsh --startup-url https://mybinder.org/v2/gh/lclem/agda-kernel/master --time-limit 500
+
 deploy:
   provider: pypi
   skip_existing: true
@@ -40,20 +44,5 @@ deploy:
   password:
     secure: "Xm+2Za4jKUgZZM2wBNC6ufLHrwP+kypf4xirskZsTKJ9fKk2t8NV7k0H5J8pj5ytrCkKwO50GueBXKRp7nxqhU/4fWwjOlGKvi7g924XffG9DzN3wcml0X8GibtrP1ynU5ZTKcHGcgCGREfCsBe3snzuYkBePkVnmR+JNYo8l7SppBKUKZeVjT/YaMKv6P9P2uYTi/qjNqzL+KmJdXIBOboVXffZI4QjOo8kYauYLf6Dv477DuVtJWF6m2dw92MAxQvC/Cwm9hl1iOuj5w6yYWU4gGiwBFkmPjv3AxfZiQHUSHBX1v8bnYDTDxp4dFnbo3TqYoim4+A9QyYKLT0RUNz0+mrjcP2+XyiTKMU7m3WGxGHgRmcfEGXxAuoFXK8ikf45n6YCSeF3e+eSp3467LvqZOkrzPwsAKpt5IeU6cutv0dBzlMTQ97Bw5Kv06iOr/XscPYHQhm2dRhUgh+LbocfyoBWBSUC2nVerNolO76AFaTBzg2SA2D2eAAox05eTegdGIC9ySt0pyaKJnrJc7Hc8dGnlddpJnP96nFfKK3HEqXWHouH4U1H9VrewUetnxlw4EWTm70DMaeanTwAYmrrl0Wc6jjUFNn6MiLM9GVN47zT9ojVUTkDpxJI+xPd7Or38zewNLb+Bqdn5L5kWj+EEobcNgk5rfJTof5qM8E="
 
-jobs:
-  include:
-  - stage: binder
-    sudo: required
-    before_install:
-      - sudo apt-get update
-      - sudo apt-get install -y firefox
-      - wget https://github.com/browsh-org/browsh/releases/download/v1.6.4/browsh_1.6.4_linux_amd64
-      - mv browsh_1.6.4_linux_amd64 browsh && chmod a+x browsh
-    install: skip
-    script:
-      # attempt to update mybinder
-      - browsh --startup-url https://mybinder.org/v2/gh/lclem/agda-kernel/master --time-limit 500
-    after_success: skip
-    
 notifications:
   email: false
