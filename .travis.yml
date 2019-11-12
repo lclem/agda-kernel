@@ -33,9 +33,10 @@ after_script:
 after_success:
   - codecov  
   # attempt to update mybinder
-  - wget https://github.com/browsh-org/browsh/releases/download/v1.6.4/browsh_1.6.4_linux_amd64
-  - mv browsh_1.6.4_linux_amd64 browsh && chmod a+x browsh
-  - ./browsh --startup-url https://mybinder.org/v2/gh/lclem/agda-kernel/master --time-limit 600
+  #- wget https://github.com/browsh-org/browsh/releases/download/v1.6.4/browsh_1.6.4_linux_amd64
+  #- mv browsh_1.6.4_linux_amd64 browsh && chmod a+x browsh
+  #- ./browsh --startup-url https://mybinder.org/v2/gh/lclem/agda-kernel/master --time-limit 600
+  - firefox --screenshot https://mybinder.org/v2/gh/lclem/agda-kernel/master
 
 deploy:
   provider: pypi
