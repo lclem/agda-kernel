@@ -727,6 +727,7 @@ class AgdaKernel(Kernel):
             'rho' : 'ρ',
             'e' : 'ε',
             'mu' : 'μ',
+            'kappa': 'κ',
             'xor' : '⊗',
             'emptyset' : '∅',
             'qed' : '∎',

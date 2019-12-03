@@ -22,7 +22,7 @@ dist/agda_kernel-0.62-py3-none-any.whl: setup.py src/agda_kernel/install.py src/
 	$(PYTHON) setup.py bdist_wheel
 
 install: build
-	pip install .
+	$(PIP) install .
 
 # run after the agda_kernel module is installed
 kernel-install: install
