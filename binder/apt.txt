@@ -7,3 +7,6 @@ cabal-install
 
 zlib1g-dev
 libncurses5-dev
+
+# in order to add new repositories to apt
+software-properties-common
