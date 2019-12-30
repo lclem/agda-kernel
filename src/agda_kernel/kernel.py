@@ -699,6 +699,8 @@ class AgdaKernel(Kernel):
             '→' :  '↦',
             '↦' : '↝',
             '↝' : '->',
+            'iff' : '⟺',
+            '<=>' : '⟺',
             '=>' : '⇒',
             '<' : '⟨',
             '>' : '⟩', # it is important that this comes after ->
@@ -719,8 +721,8 @@ class AgdaKernel(Kernel):
             '<=' : '≤',
             'geq' : '≥',
             '>=' : '≥',
-            '=' : '≡',
             '[=' : '⊑',
+            '=' : '≡',
             'alpha' : 'α',
             'beta' : 'β',
             'gamma' : 'γ',
@@ -762,7 +764,6 @@ class AgdaKernel(Kernel):
             'psi' : 'ψ',
             'xi' : 'ξ',
             #'??' : "{! !}",
-            'iff' : '⟺',
             'w'  : 'ω ',
             'omega' : 'ω',
             'Gamma' : 'Γ',
@@ -771,7 +772,9 @@ class AgdaKernel(Kernel):
             #';' : ';', very bad idea: the second semicolon lloks the same but it is a different unicode symbol...
             ';' : '⨟',
             '(' : '⟬',
+            '⟬' : '｟',
             ')' : '⟭',
+            '⟭' : '｠',
             'b' : 'ᵇ',
             'empty' : '∅',
             '|-' : '⊢',
@@ -781,7 +784,9 @@ class AgdaKernel(Kernel):
             'l' : 'ℓ',
             'op' : 'ᵒᵖ',
             '{{' : '⦃',
-            '}}' : '⦄'
+            '}}' : '⦄',
+            '--' : '−−', # they are not the same!
+            '−−' : '--' # they are the other way around!
         }
 
         other_half = {val : key for (key, val) in half_subst.items() if val not in list(half_subst.keys())}
