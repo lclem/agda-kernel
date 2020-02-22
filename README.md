@@ -7,6 +7,7 @@
 
 # agda-kernel
 An experimental Agda kernel for Jupyter.
+Used at [Nextjournal](https://nextjournal.com/plfa/ToC) [[nextjournal kernel]](https://github.com/nextjournal/agda-kernel).
 
 ![](demo/demo1.gif)
 
