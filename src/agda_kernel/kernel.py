@@ -787,6 +787,10 @@ class AgdaKernel(Kernel):
             '}}' : '⦄',
             '--' : '−−', # they are not the same!
             '−−' : '--' # they are the other way around!
+            ':' : '꞉', # they are not the same!
+            '꞉' : ':', # they are the other way around!
+            'subseteq' : '⊆',
+            '⊆' : 'subseteq'
         }
 
         other_half = {val : key for (key, val) in half_subst.items() if val not in list(half_subst.keys())}
