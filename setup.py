@@ -6,7 +6,7 @@ with open('README.md') as f:
 
 setup(
     name='agda_kernel',
-    version='0.62',
+    version='0.63',
     #packages=['src/agda_kernel'],
     packages=setuptools.find_packages(where="src"),
     package_dir={"": "src"},
