@@ -786,7 +786,7 @@ class AgdaKernel(Kernel):
             '{{' : '⦃',
             '}}' : '⦄',
             '--' : '−−', # they are not the same!
-            '−−' : '--' # they are the other way around!
+            '−−' : '--', # they are the other way around!
             ':' : '꞉', # they are not the same!
             '꞉' : ':', # they are the other way around!
             'subseteq' : '⊆',
