@@ -1,4 +1,4 @@
-agda=2.6.0
+agda
 agda-mode
 agda-stdlib
 
