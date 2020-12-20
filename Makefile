@@ -7,11 +7,32 @@ CODEMIRROR = $(SITE-PACKAGES)/notebook/static/components/codemirror
 CODEMIRROR-AGDA = $(CODEMIRROR)/mode/agda
 $(info CODEMIRROR-AGDA: $(CODEMIRROR-AGDA))
 
-all: build install codemirror-install # kernel-install
+# Docker image name and tag
+IMAGE:=yossarianlives/agda-notebook
+TAG?=latest
+# Shell that make should use
+SHELL:=bash
+# Can export DOCKER=podman in parent environment
+DOCKER:=docker
+
+all: build install codemirror-install docker-build docker-push # kernel-install
+
+docker-build: DARGS?=
+docker-build:
+	$(DOCKER) build $(DARGS) --rm --force-rm -t $(IMAGE):$(TAG) .
+
+docker-push:
+	$(DOCKER) push $(IMAGE):$(TAG)
+
+docker-run: ARGS?=
+docker-run: DARGS?=
+docker-run: PORT?=8888
+docker-run: ## Make a container from a tagged image image
+	$(DOCKER) run -it --rm -p $(PORT):8888 $(DARGS) $(IMAGE):$(TAG) $(ARGS)
 
 test: build install kernel-install codemirror-install
 	#jupyter nbconvert --to notebook --execute example/Example.ipynb  --output Example-output.ipynb
-	
+
 pytest: install
 	pytest
 
