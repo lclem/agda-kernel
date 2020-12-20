@@ -34,14 +34,20 @@ ENV HOME /home/${NB_USER}
 
 USER $NB_UID
 
-RUN python -m pip install --no-cache --upgrade pip && \
-    python -m pip install --no-cache notebook
-    
+RUN cabal update
+RUN cabal install alex happy Agda-2.6.1.1
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --upgrade notebook
+RUN python -m pip install --upgrade jupyterlab
+RUN python -m pip install jupyterlab-git
+RUN python -m pip install jupyter_contrib_nbextensions
+RUN python -m pip install widgetsnbextension
+RUN python -m pip install jupyterthemes
 RUN python -m pip install agda_kernel
 RUN python -m agda_kernel.install
 
-RUN cabal update
-RUN cabal install alex happy Agda-2.6.1
+RUN jupyter lab build
 
 #ENV JUPYTER_ENABLE_LAB=yes
 
@@ -54,10 +60,12 @@ WORKDIR ${HOME}
 
 ENV PATH ${PATH}:${HOME}/.cabal/bin
 
-#RUN jupyter contrib nbextension install --user
-#RUN jupyter nbextension enable --py widgetsnbextension
-#RUN jupyter nbextension enable agda-extension/main
-#RUN jupyter nbextension enable toc2/main
+RUN jupyter labextension install @jupyterlab/github
+
+RUN jupyter contrib nbextension install --user
+RUN jupyter nbextension enable --py widgetsnbextension
+RUN jupyter nbextension enable agda-extension/main
+RUN jupyter nbextension enable toc2/main
 
 #RUN jupyter nbextension enable literate-markdown/main
 #RUN jupyter nbextension enable hide_input/main
@@ -65,4 +73,4 @@ ENV PATH ${PATH}:${HOME}/.cabal/bin
 #RUN jupyter nbextension enable freeze/main
 
 # change theme with jupyter-themes
-#RUN jt -t grade3 -f roboto -fs 10 -cellw 800 -altp -T
+RUN jt -t grade3 -f roboto -fs 10 -cellw 800 -altp -T

@@ -21,7 +21,7 @@ docker-build: DARGS?=
 docker-build:
 	$(DOCKER) build $(DARGS) --rm --force-rm -t $(IMAGE):$(TAG) .
 
-docker-push:
+docker-push: docker-build
 	$(DOCKER) push $(IMAGE):$(TAG)
 
 docker-run: ARGS?=
