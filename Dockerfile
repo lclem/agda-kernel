@@ -62,6 +62,9 @@ ENV PATH ${PATH}:${HOME}/.cabal/bin
 
 RUN jupyter labextension install @jupyterlab/github
 
+RUN make codemirror-install
+RUN python -m pip install -r requirements.txt
+
 RUN jupyter contrib nbextension install --user
 RUN jupyter nbextension enable --py widgetsnbextension
 RUN jupyter nbextension enable agda-extension/main
