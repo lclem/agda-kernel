@@ -2,6 +2,7 @@ from ipykernel.kernelbase import Kernel
 import re
 import subprocess
 import os
+import threading
 from IPython.utils.tokenutil import token_at_cursor, line_at_cursor
 from subprocess import Popen, PIPE, STDOUT
 import pexpect
@@ -123,7 +124,7 @@ class AgdaKernel(Kernel):
         version = version[:-5] # remove trailing "\r\n"
         self.print(f'Detected Agda version: {version}')
         return version
-
+        
     def interact(self, cmd):
 
         self.print("Interacting with Agda: %s" % cmd)
@@ -208,17 +209,33 @@ class AgdaKernel(Kernel):
     def do_shutdown(self, restart):
         return
 
-    def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
+    def do_execute(self, in_code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
         self.startAgda()
-        fileName = self.getFileName(code)
-        dirName = self.getDirName(code)
-        moduleName = self.getModuleName(code)
+        fileName = self.getFileName(in_code)
+        dirName = self.getDirName(in_code)
+        moduleName = self.getModuleName(in_code)
         absoluteFileName = os.path.abspath(fileName)
 
         preambleLength = 0
 
         self.print(f'user_expressions: {user_expressions}')
+
+        if user_expressions and "persistent" in user_expressions:
+            persistent = user_expressions["persistent"] == "yes"
+        else:
+            persistent = False
+
+        if user_expressions and "loadFromStore" in user_expressions:
+            fileHandle = open(fileName, "r+")
+            code = fileHandle.read()
+            fileHandle.close()
+
+            self.print(f'loadFromStore = yes')
+            self.print(f'code from file: {code}')            
+        else:
+            code = in_code
+
         self.print(f'executing code: {code}')
 
         if user_expressions:
@@ -276,12 +293,30 @@ class AgdaKernel(Kernel):
             fileHandle = open(fileName, "w+")
 
             for i in range(numLines):
-                fileHandle.write("%s\n" % lines[i])
+                if i < numLines - 1:
+                    fileHandle.write("%s\n" % lines[i])
+                else:
+                    fileHandle.write("%s" % lines[i])
 
             fileHandle.close()
 
             #subprocess.run(["agda", fileName])
             #result = os.popen("agda %s" % fileName).read()
+
+            # if the persistent option is turned on, do a git commit
+            if persistent:
+
+                def persist(): #(self, fileName):
+
+                    self.print(f'Git commit & push: {fileName}')
+
+                    os.system('git pull')
+                    os.system(f'git add {fileName}')
+                    os.system(f'git commit -m "do_execute: updated {fileName}"')
+                    os.system(f'git push')
+
+                thr = threading.Thread(target=persist, args=(), kwargs={})
+                thr.start()
 
             result, error = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
             result = deescapify(result)
@@ -327,13 +362,19 @@ class AgdaKernel(Kernel):
         holes_as_lines = list(map(lambda x: x[0] - preambleLength, holes_as_lines_rel_pos)) 
         #self.print(f'holes_as_lines = {holes_as_lines}')
 
+        # remove trailing newlines
+        code = code.rstrip('\n')
+
         user_expressions = {
             "fileName": absoluteFileName,
             "moduleName": moduleName,
             "holes": holes_as_lines,
             "preambleLength" : preambleLength,
-            "isError": error
+            "isError": error,
+            "code": code
         }
+
+        self.print(f"Returning user_expressions: {user_expressions}")
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
@@ -625,10 +666,10 @@ class AgdaKernel(Kernel):
     # cursor_pos is always at the beginning or at the end of the selection;
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
-        self.print(f'do_inspect cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: "{self.code}" of length {len(self.code)}')
-
         if self.code == "" or not code in self.code:
             return {'status': 'error', 'found': True, 'data': {'text/plain': "must load the cell first"}}
+
+        self.print(f'do_inspect cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: "{self.code}" of length {len(self.code)}')
 
         # load the code to check that there are no errors
         response = self.do_execute(self.code, False)
