@@ -63,6 +63,8 @@ class AgdaKernel(Kernel):
     cellId = ""
     preamble = ""
 
+    unicodeComplete = True
+
     '''
     _banner = None
 
@@ -226,17 +228,21 @@ class AgdaKernel(Kernel):
         else:
             persistent = False
 
-        if user_expressions and "loadFromStore" in user_expressions:
+        # set unicodeComplete only if passed in user_expressions;
+        # otherwise, remember the previous value
+        if user_expressions and "unicodeComplete" in user_expressions:
+            self.unicodeComplete = user_expressions["unicodeComplete"] == "yes"
+
+        if user_expressions and "loadFromStore" in user_expressions and user_expressions["loadFromStore"] == "yes":
             fileHandle = open(fileName, "r+")
             code = fileHandle.read()
             fileHandle.close()
 
             self.print(f'loadFromStore = yes')
-            self.print(f'code from file: {code}')            
+            self.print(f'executing code from file: {code}')            
         else:
             code = in_code
-
-        self.print(f'executing code: {code}')
+            self.print(f'executing code: {code}')
 
         if user_expressions:
             # get notebook name (if any)
@@ -853,8 +859,12 @@ class AgdaKernel(Kernel):
                 matches = [subst[key]]
                 break
 
-        # didn't apply a textual substitution
-        if matches == []:
+        # didn't apply a textual substitution,
+        # or such substitutions are disabled
+        if not self.unicodeComplete or matches == []:
+
+            # reset the list of matches in any case
+            matches = []
 
             # load the current contents
             self.do_execute(code, False)
