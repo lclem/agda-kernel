@@ -333,18 +333,24 @@ class AgdaKernel(Kernel):
                     child = pexpect.spawn(f'git push origin')
 
                     while True:
+
                         prompt = child.expect([
-            #                "Username for 'https://github.com':",
+                            "Username for 'https://github.com':",
                             "Password for 'https://lclem@github.com':",
                             pexpect.EOF]
                         )
-                        # if prompt == 0:
-                        #     child.sendline('lclem')
+
                         if prompt == 0:
+                            if user_expressions and "username" in user_expressions:
+                                username = user_expressions["username"]
+                                child.sendline(username)
+
+                        if prompt == 1:
                             if user_expressions and "password" in user_expressions:
                                 password = user_expressions["password"]
                                 child.sendline(password)
-                        elif prompt == 1:
+
+                        elif prompt == 2:
                             child.close()
                             break
 
