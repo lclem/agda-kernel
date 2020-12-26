@@ -327,7 +327,12 @@ class AgdaKernel(Kernel):
 
                 def git_push():
                     # push the changes
-            #        branch = "main"
+                    #branch = "main"
+
+                    if user_expressions and "username" in user_expressions:
+                        username = user_expressions["username"]
+                    else
+                        username = ""
 
                     self.print(f'Pushing') #to branch {branch}')
                     child = pexpect.spawn(f'git push origin')
@@ -336,13 +341,11 @@ class AgdaKernel(Kernel):
 
                         prompt = child.expect([
                             "Username for 'https://github.com':",
-                            "Password for 'https://lclem@github.com':",
+                            f"Password for 'https://{username}@github.com':",
                             pexpect.EOF]
                         )
 
                         if prompt == 0:
-                            if user_expressions and "username" in user_expressions:
-                                username = user_expressions["username"]
                                 child.sendline(username)
 
                         if prompt == 1:
