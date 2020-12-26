@@ -332,9 +332,10 @@ class AgdaKernel(Kernel):
                     if user_expressions and "username" in user_expressions:
                         username = user_expressions["username"]
                     else:
+                        self.print(f'No username provided')
                         username = ""
 
-                    self.print(f'Pushing') #to branch {branch}')
+                    self.print(f'Pushing, username: {username}') #to branch {branch}')
                     child = pexpect.spawn(f'git push origin')
 
                     while True:
@@ -345,10 +346,12 @@ class AgdaKernel(Kernel):
                             pexpect.EOF]
                         )
 
-                        if prompt == 0:
-                                child.sendline(username)
+                        self.print(f'Prompt = {prompt}')
 
-                        if prompt == 1:
+                        if prompt == 0:
+                            child.sendline(username)
+
+                        elif prompt == 1:
                             if user_expressions and "password" in user_expressions:
                                 password = user_expressions["password"]
                                 child.sendline(password)
