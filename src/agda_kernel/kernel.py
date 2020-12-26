@@ -84,6 +84,7 @@ class AgdaKernel(Kernel):
     def startAgda(self):
         if self.firstTime:
             self.process.expect('Agda2> ')
+            self.print(f'Agda has started.')
             self.firstTime = False
         return
 
@@ -126,7 +127,7 @@ class AgdaKernel(Kernel):
         version = version[:-5] # remove trailing "\r\n"
         self.print(f'Detected Agda version: {version}')
         return version
-        
+
     def interact(self, cmd):
 
         self.print("Interacting with Agda: %s" % cmd)
@@ -136,7 +137,8 @@ class AgdaKernel(Kernel):
 
         #cmd = cmd + "\n"
         self.process.sendline(cmd)
-        self.process.expect('Agda2> ', timeout=120)
+        #this more robust version will surive unexpected end of output from Agda
+        self.process.expect([pexpect.TIMEOUT, 'Agda2> ', pexpect.EOF], timeout=120)
         result = self.process.before # str(...) added to make lint happy
 
         #skip the first line (it's a copy of cmd)
@@ -234,14 +236,21 @@ class AgdaKernel(Kernel):
             self.unicodeComplete = user_expressions["unicodeComplete"] == "yes"
 
         if user_expressions and "loadFromStore" in user_expressions and user_expressions["loadFromStore"] == "yes":
-            fileHandle = open(fileName, "r+")
-            code = fileHandle.read()
-            fileHandle.close()
 
             self.print(f'loadFromStore = yes')
-            self.print(f'executing code from file: {code}')            
+
+            try:                
+                fileHandle = open(fileName, "r+")
+                code = fileHandle.read()
+                fileHandle.close()
+                self.print(f'executing code from file: {code}')
+            except:
+                self.print(f"file {fileName} not found, executing from given code")
+                code = in_code
+
         else:
             code = in_code
+            self.print(f'loadFromStore = no')
             self.print(f'executing code: {code}')
 
         if user_expressions:
@@ -275,15 +284,22 @@ class AgdaKernel(Kernel):
             # if no line \"module [modulename] where\" is provided,
             # we create a standard one ourselves
             preambleLength = len(preamble.split("\n")) - 1
-            new_code = preamble + code
 
-            fileName = self.getFileName(new_code)
-            dirName = self.getDirName(new_code)
-            moduleName = self.getModuleName(new_code)
-            absoluteFileName = os.path.abspath(fileName)
-            self.print(f'redetected fileName: {fileName}, dirName: {dirName}, moduleName: {moduleName}, notebookName: {notebookName}, cellId: {cellId}, new code: {new_code}')
+            if preamble == "":
+                error = True
+                self.print(f'a preamble of the form "module xxx where" should be provided')
+                result = 'a preamble of the form "module xxx where" should be provided'
 
-            code = new_code
+            else:
+                new_code = preamble + code
+
+                fileName = self.getFileName(new_code)
+                dirName = self.getDirName(new_code)
+                moduleName = self.getModuleName(new_code)
+                absoluteFileName = os.path.abspath(fileName)
+                self.print(f'redetected fileName: {fileName}, dirName: {dirName}, moduleName: {moduleName}, notebookName: {notebookName}, cellId: {cellId}, new code: {new_code}')
+
+                code = new_code
 
         if not error:
 
@@ -291,7 +307,7 @@ class AgdaKernel(Kernel):
             lines = code.split('\n')
             numLines = len(lines)
 
-            #self.print("file: %s" % fileName)
+            self.print(f"writing to file: {fileName}")
 
             if dirName != "" and not os.path.exists(dirName):
                 os.makedirs(dirName)
@@ -306,11 +322,36 @@ class AgdaKernel(Kernel):
 
             fileHandle.close()
 
-            #subprocess.run(["agda", fileName])
-            #result = os.popen("agda %s" % fileName).read()
-
             # if the persistent option is turned on, do a git commit
             if persistent:
+
+                def git_push():
+                    # push the changes
+            #        branch = "main"
+
+                    self.print(f'Pushing') #to branch {branch}')
+                    child = pexpect.spawn(f'git push origin')
+
+                    while True:
+                        prompt = child.expect([
+            #                "Username for 'https://github.com':",
+                            "Password for 'https://lclem@github.com':",
+                            pexpect.EOF]
+                        )
+                        # if prompt == 0:
+                        #     child.sendline('lclem')
+                        if prompt == 0:
+                            if user_expressions and "password" in user_expressions:
+                                password = user_expressions["password"]
+                                child.sendline(password)
+                        elif prompt == 1:
+                            child.close()
+                            break
+
+                    if child.exitstatus != 0:
+                        self.print(child.before.decode())
+
+                    self.print(f'Pushed!')
 
                 def persist(): #(self, fileName):
 
@@ -319,11 +360,15 @@ class AgdaKernel(Kernel):
                     os.system('git pull')
                     os.system(f'git add {fileName}')
                     os.system(f'git commit -m "do_execute: updated {fileName}"')
-                    os.system(f'git push')
+                    self.print(f'Time to push...')
+                    git_push()
+
+                self.print(f'Persist is on, asynchronously committing to github')
 
                 thr = threading.Thread(target=persist, args=(), kwargs={})
                 thr.start()
 
+            # load the code in Agda
             result, error = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
             result = deescapify(result)
 
@@ -377,7 +422,8 @@ class AgdaKernel(Kernel):
             "holes": holes_as_lines,
             "preambleLength" : preambleLength,
             "isError": error,
-            "code": code
+            "code": code,
+            "result": result # return the agda response here too for further processing
         }
 
         self.print(f"Returning user_expressions: {user_expressions}")
@@ -628,11 +674,11 @@ class AgdaKernel(Kernel):
         error = error2 and error3
 
         if not error:
-            result = f"Eval: {exp.strip()} --> {normal_form.strip()} : {inferred_type.strip()}"
+            result = f"{exp.strip()} EVALUATES TO \n{normal_form.strip()} OF TYPE\n {inferred_type.strip()}"
         elif not error2:
             result = f"{exp.strip()} : {inferred_type.strip()}"
         elif not error3:
-            result = f"Eval: {exp.strip()} --> {normal_form.strip()}"
+            result = f"{exp.strip()} = {normal_form.strip()}"
         else: # this is an error message
             result = normal_form.strip()
 
@@ -672,13 +718,14 @@ class AgdaKernel(Kernel):
     # cursor_pos is always at the beginning or at the end of the selection;
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
-        if self.code == "" or not code in self.code:
-            return {'status': 'error', 'found': True, 'data': {'text/plain': "must load the cell first"}}
+        #if self.code == "" or not code in self.code:
+        #    return {'status': 'error', 'found': True, 'data': {'text/plain': "must load the cell first"}}
 
         self.print(f'do_inspect cursor_pos: {cursor_pos}, selection: "{code}" of length {len(code)}, code: "{self.code}" of length {len(self.code)}')
 
         # load the code to check that there are no errors
-        response = self.do_execute(self.code, False)
+        #response = self.do_execute(self.code, False)
+        response = self.do_execute(code, False)
 
         if response['status'] == 'error':
             return {'status': 'error', 'found': False, 'data': {'text/plain': "unable to inspect, the code contain errors"}}
