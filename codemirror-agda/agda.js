@@ -220,7 +220,7 @@ CodeMirror.defineMode("agda", function(_config, modeConfig) {
       "field", "forall", "hiding", "import", "in", "inductive", "infix", "infixl", "infixr", "instance",
       "let", "macro", "module", "mutual", "no-eta-equality", "open", "overlap",
       "pattern", "postulate", "primitive", "private", "public", "quote", "quoteContext", "quoteGoal", "quoteTerm",
-      "record", "renaming", "rewrite", "syntax", "tactic", "unquote", "unquoteDecl", "unquoteDef", "using", "where", "with");
+      "record", "renaming", "rewrite", "syntax", "tactic", "unquote", "unquoteDecl", "unquoteDef", "using", "variable", "where", "with");
 
     // setType("builtin")(".", ";", "{", "}", "(", ")", "\"", "@");
 
