@@ -331,7 +331,7 @@ class AgdaKernel(Kernel):
 
                     if user_expressions and "username" in user_expressions:
                         username = user_expressions["username"]
-                    else
+                    else:
                         username = ""
 
                     self.print(f'Pushing') #to branch {branch}')
