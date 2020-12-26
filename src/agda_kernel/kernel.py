@@ -336,6 +336,29 @@ class AgdaKernel(Kernel):
                         username = ""
 
                     self.print(f'Pushing, username: {username}') #to branch {branch}')
+
+                    try:
+                        self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'Pushing, username: {username}\n'})
+                    except AttributeError: # during testing there is no such method, just ignore
+                        self.print("Ignoring call to self.send_response")
+
+                    if user_expressions and "password" in user_expressions:
+                        self.print("Storing password")
+                        password = user_expressions["password"]
+
+                        try:
+                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'Storing password\n'})
+                        except AttributeError: # during testing there is no such method, just ignore
+                            self.print("Ignoring call to self.send_response")
+                    else:
+                        self.print("No password provided")
+                        password = ""
+
+                        try:
+                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'No password provided\n'})
+                        except AttributeError: # during testing there is no such method, just ignore
+                            self.print("Ignoring call to self.send_response")
+
                     child = pexpect.spawn(f'git push origin')
 
                     while True:
@@ -348,22 +371,36 @@ class AgdaKernel(Kernel):
 
                         self.print(f'Prompt = {prompt}')
 
+                        try:
+                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'Prompt = {prompt}\n'})
+                        except AttributeError: # during testing there is no such method, just ignore
+                            self.print("Ignoring call to self.send_response")
+
                         if prompt == 0:
                             child.sendline(username)
 
                         elif prompt == 1:
-                            if user_expressions and "password" in user_expressions:
-                                password = user_expressions["password"]
-                                child.sendline(password)
-
+                            child.sendline(password)
+                                
                         elif prompt == 2:
                             child.close()
                             break
 
                     if child.exitstatus != 0:
-                        self.print(child.before.decode())
+                        text = child.before.decode()
+                        self.print(text)
+
+                        try:
+                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': text})
+                        except AttributeError: # during testing there is no such method, just ignore
+                            self.print("Ignoring call to self.send_response")
 
                     self.print(f'Pushed!')
+
+                    try:
+                        self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': "Pushed!"})
+                    except AttributeError: # during testing there is no such method, just ignore
+                        self.print("Ignoring call to self.send_response")
 
                 def persist(): #(self, fileName):
 
@@ -428,7 +465,7 @@ class AgdaKernel(Kernel):
         # remove trailing newlines
         code = code.rstrip('\n')
 
-        user_expressions = {
+        user_expressions_return = {
             "fileName": absoluteFileName,
             "moduleName": moduleName,
             "holes": holes_as_lines,
@@ -438,13 +475,13 @@ class AgdaKernel(Kernel):
             "result": result # return the agda response here too for further processing
         }
 
-        self.print(f"Returning user_expressions: {user_expressions}")
+        self.print(f"Returning user_expressions_return: {user_expressions_return}")
 
         return {'status': 'ok' if not error else 'error',
                 # The base class increments the execution count
                 'execution_count': self.execution_count,
                 'payload': [],
-                'user_expressions': user_expressions,
+                'user_expressions': user_expressions_return,
                }
                
     def inComment(self, code, pos):
