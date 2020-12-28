@@ -76,6 +76,8 @@ class AgdaKernel(Kernel):
 
     '''
 
+    lock = threading.Lock()
+
     #process = Popen(['agda', '--interaction'], stdout=PIPE, stdin=PIPE, stderr=STDOUT)
     process = pexpect.spawnu('agda --interaction')
 
@@ -404,13 +406,14 @@ class AgdaKernel(Kernel):
 
                 def persist(): #(self, fileName):
 
-                    self.print(f'Git commit & push: {fileName}')
+                    with lock:
+                        self.print(f'Git commit & push: {fileName}')
 
-                    os.system('git pull')
-                    os.system(f'git add {fileName}')
-                    os.system(f'git commit -m "do_execute: updated {fileName}"')
-                    self.print(f'Time to push...')
-                    git_push()
+                        os.system('git pull')
+                        os.system(f'git add {fileName}')
+                        os.system(f'git commit -m "do_execute: updated {fileName}"')
+                        self.print(f'Time to push...')
+                        git_push()
 
                 self.print(f'Persist is on, asynchronously committing to github')
 
