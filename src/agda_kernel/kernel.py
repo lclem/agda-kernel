@@ -225,7 +225,8 @@ class AgdaKernel(Kernel):
 
         preambleLength = 0
 
-        self.print(f'user_expressions: {user_expressions}')
+        # printing this may expose the user's github password
+        # self.print(f'user_expressions: {user_expressions}')
 
         if user_expressions and "persistent" in user_expressions:
             persistent = user_expressions["persistent"] == "yes"
