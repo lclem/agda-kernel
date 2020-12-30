@@ -27,6 +27,7 @@ AGDA_CHECKED = "Checked"
 AGDA_INFERRED_TYPE = "*Inferred Type*"
 AGDA_AUTO = "*Auto*"
 AGDA_TYPECHECKING = "*Type-checking*"
+AGDA_INTRO = "*Intro*"
 
 AGDA_ERROR_LIKE = [AGDA_ERROR, AGDA_ALL_ERRORS, AGDA_ALL_GOALS, AGDA_ALL_GOALS_ERRORS, AGDA_ALL_WARNINGS, AGDA_ALL_ERRORS_WARNINGS, AGDA_ALL_GOALS_WARNINGS, AGDA_ALL_GOALS_ERRORS_WARNINGS]
 
@@ -224,6 +225,13 @@ class AgdaKernel(Kernel):
         absoluteFileName = os.path.abspath(fileName)
 
         preambleLength = 0
+
+        if user_expressions and "agdaCMD" in user_expressions:
+            self.agdaCMD = user_expressions["agdaCMD"]
+            self.print(f'agdaCMD = {self.agdaCMD}')
+        else:
+            self.print(f'agdaCMD NOT given')
+            self.agdaCMD = "" # reset if not given
 
         # printing this may expose the user's github password
         # self.print(f'user_expressions: {user_expressions}')
@@ -685,6 +693,9 @@ class AgdaKernel(Kernel):
                 return info_action_message, False
             elif AGDA_NORMAL_FORM in info_action_types:
                 return info_action_message, False
+            else:
+                return info_action_message, True
+
         elif AGDA_MAKE_CASE_ACTION in response: # in this case we need to parse Agda's response again
             case_list = response[AGDA_MAKE_CASE_ACTION][0]
             result = "\n".join(case_list)
@@ -959,6 +970,39 @@ class AgdaKernel(Kernel):
                 matches = [subst[key]]
                 break
 
+        def cmdAuto():
+
+            # call Agsy, options: -c (case splitting) -m (hints) -r (refine) -l (list) -s k (select result k)
+            """options = lambda k: f'  -m -s {k}  '
+            k = 0
+            while True:
+                result, error = self.runCmd(code, cursor_start, cursor_end, options(k), AGDA_CMD_AUTOONE)
+                self.print(f'result is: {result}, error is: {error}')
+                if error or result in ["No solution found", "No candidate found", "Only 1 solution found", f'Only {k} solutions found']:
+                    if matches == []:
+                        matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
+
+                    break
+                else:
+                    matches += [result] if result != "" else []
+
+                k += 1
+            """
+            options = "-m -l" # list solutions
+            self.print(f'Agsy options are: {options}')
+            result, error = self.runCmd(code, cursor_start, cursor_end, options, AGDA_CMD_AUTOONE if self.agda_version >= "2.5.4" else AGDA_CMD_AUTO)
+            self.print(f'result is: {result}, error is: {error}')
+
+            if result.find("Listing solution(s)") != -1:
+                matches = self.listing_solution_parser(result)
+
+            elif error or result in ["No solution found", "No candidate found", "No solution found after timeout (1000ms)"]:
+                matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
+            else:
+                self.print(f'Unexpected answer: {result}, error is: {error}')
+
+            return result, error, matches
+
         # didn't apply a textual substitution,
         # or such substitutions are disabled
         if not self.unicodeComplete or matches == []:
@@ -966,93 +1010,103 @@ class AgdaKernel(Kernel):
             # reset the list of matches in any case
             matches = []
 
-            # load the current contents
-            self.do_execute(code, False)
-
             cursor_start_orig, cursor_end_orig, exp_orig = self.find_expression(code, cursor_pos)
             cursor_start, cursor_end = cursor_start_orig, cursor_end_orig
             exp = escapify(exp_orig)
             #cursor_start += 1
 
-            if exp == "?":
-                # call Agsy, options: -c (case splitting) -m (hints) -r (refine) -l (list) -s k (select result k)
-                """options = lambda k: f'  -m -s {k}  '
-                k = 0
-                while True:
-                    result, error = self.runCmd(code, cursor_start, cursor_end, options(k), AGDA_CMD_AUTOONE)
-                    self.print(f'result is: {result}, error is: {error}')
-                    if error or result in ["No solution found", "No candidate found", "Only 1 solution found", f'Only {k} solutions found']:
-                        if matches == []:
-                            matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
+            agdaCMD = self.agdaCMD
 
-                        break
-                    else:
-                        matches += [result] if result != "" else []
+            # if we have a specific command to pass to Agda, just do it
+            if agdaCMD != "":
 
-                    k += 1
-                """
-                options = "-m -l" # list solutions
-                self.print(f'Agsy options are: {options}')
-                result, error = self.runCmd(code, cursor_start, cursor_end, options, AGDA_CMD_AUTOONE if self.agda_version >= "2.5.4" else AGDA_CMD_AUTO)
-                self.print(f'result is: {result}, error is: {error}')
+                self.print(f'Passing command directly to Agda: {agdaCMD}')
 
-                if result.find("Listing solution(s)") != -1:
-                    matches += self.listing_solution_parser(result)
-                elif error or result in ["No solution found", "No candidate found", "No solution found after timeout (1000ms)"]:
-                     matches = ["{! !}"] # transform "?" into "{! !}" when Agsy fails
+                if agdaCMD == AGDA_CMD_AUTO or agdaCMD == AGDA_CMD_AUTOONE:
+                    result, error, matches = cmdAuto()
                 else:
-                    self.print(f'Unexpected answer: {result}, error is: {error}')
-                
-            # continue the chain if Agsy fails
-            if self.isHole(exp) and (exp != "?" or matches == ["{! !}"]):
+                    result, error = self.runCmd(code, cursor_start, cursor_end, exp, agdaCMD)
 
-                # first, try to replace the hole with its current contents
-                result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_GIVE)
+                    self.print(f'result is: {result}, error is: {error}')
 
-                self.print(f'AGDA_CMD_GIVE, result: {result}, error: {error}')
+                    if error:
+                        cursor_start, cursor_end = cursor_pos, cursor_pos
+                    elif agdaCMD == AGDA_CMD_GIVE and result == "OK":
+                        result = "(" + re.search(r'\{! *(.*) *!\}', exp).group(1).strip() + ")"
+                        self.print(f'gave hole: {result}')
+                    elif agdaCMD == AGDA_CMD_MAKE_CASE:
+                        # need to replace the current row with result
+                        while cursor_start > 0 and code[cursor_start - 1] != "\n":
+                            cursor_start -= 1
+                        while cursor_end < length and code[cursor_end] != "\n":
+                            cursor_end += 1
+                    # elif agdaCMD == AGDA_CMD_REFINE_OR_INTRO:
+                        
+                    # else:
+                    #     cursor_start, cursor_end = cursor_pos, cursor_pos
+                    #     result = ""
 
-                if error:
-                    # second, try to automatically refine the current contents
-                    result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_REFINE_OR_INTRO)
+                    matches = [result] if result != "" else []
 
-                    if error: # try case
-                        # need to reload to make it work (??)
-                        _, _ = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
+            else:
 
-                        # third, try to introduce a case analysis
-                        result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_MAKE_CASE)
+                # load the current contents
+                self.do_execute(code, False)
 
-                        if error or result == "OK":
-                            cursor_start, cursor_end = cursor_pos, cursor_pos
-                            result = ""
+                if exp == "?":
+                    result, error, matches = cmdAuto()
+
+                # continue the chain if Agsy fails
+                if self.isHole(exp) and (exp != "?" or matches == ["{! !}"]):
+
+                    # first, try to replace the hole with its current contents
+                    result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_GIVE)
+
+                    self.print(f'AGDA_CMD_GIVE, result: {result}, error: {error}')
+
+                    if error:
+                        # second, try to automatically refine the current contents
+                        result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_REFINE_OR_INTRO)
+
+                        if error: # try case
+                            # need to reload to make it work (??)
+                            _, _ = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
+
+                            # third, try to introduce a case analysis
+                            result, error = self.runCmd(code, cursor_start, cursor_end, exp, AGDA_CMD_MAKE_CASE)
+
+                            if error or result == "OK":
+                                cursor_start, cursor_end = cursor_pos, cursor_pos
+                                result = ""
+                            else:
+                                # need to replace the current row with result
+                                while cursor_start > 0 and code[cursor_start - 1] != "\n":
+                                    cursor_start -= 1
+                                while cursor_end < length and code[cursor_end] != "\n":
+                                    cursor_end += 1
+
+                        elif result == "OK":
+                            # cannot close the hole
+                            result1 = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
+                            self.print(f'not closing hole: {result1}')
                         else:
-                            # need to replace the current row with result
-                            while cursor_start > 0 and code[cursor_start - 1] != "\n":
-                                cursor_start -= 1
-                            while cursor_end < length and code[cursor_end] != "\n":
-                                cursor_end += 1
+                            # in this case result is a refined goal and we can refine the hole
+                            result = result
                     elif result == "OK":
-                        # cannot close the hole
-                        result1 = re.search(r'\{! *(.*) *!\}', exp).group(1).strip()
-                        self.print(f'not closing hole: {result1}')
-                    else:
-                        # in this case result is a refined goal and we can refine the hole
-                        result = result
-                elif result == "OK":
-                    # close the hole
-                    result = "(" + re.search(r'\{! *(.*) *!\}', exp).group(1).strip() + ")"
-                    self.print(f'gave hole: {result}')
+                        # close the hole
+                        result = "(" + re.search(r'\{! *(.*) *!\}', exp).group(1).strip() + ")"
+                        self.print(f'gave hole: {result}')
 
-                matches = [result] if result != "" else []
+                    matches = [result] if result != "" else []
 
-            self.print(f'exp: {exp}, matches: {matches}')
+                self.print(f'exp: {exp}, matches: {matches}')
 
-            # always replace "?" with a hole in case there is no match
-            if exp == "?" and matches == []:
-                matches = ["{! !}"]
-                cursor_start, cursor_end = cursor_start_orig, cursor_end_orig
-                self.print(f'cursor_start: {cursor_start}, cursor_end: {cursor_end}')
-                error = False
+                # always replace "?" with a hole in case there is no match
+                if exp == "?" and matches == []:
+                    matches = ["{! !}"]
+                    cursor_start, cursor_end = cursor_start_orig, cursor_end_orig
+                    self.print(f'cursor_start: {cursor_start}, cursor_end: {cursor_end}')
+                    error = False
     
         return {'matches': matches, 'cursor_start': cursor_start,
                 'cursor_end': cursor_end, 'metadata': {},
@@ -1062,8 +1116,11 @@ class AgdaKernel(Kernel):
         # example: Listing solution(s) 0-9\n0  cong suc (+-assoc m n p)\n1  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m p p)) ⟩\nsuc (m + (n + p)) ∎\n2  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m p n)) ⟩\nsuc (m + (n + p)) ∎\n3  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m p m)) ⟩\nsuc (m + (n + p)) ∎\n4  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m n p)) ⟩\nsuc (m + (n + p)) ∎\n5  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m n n)) ⟩\nsuc (m + (n + p)) ∎\n6  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m n m)) ⟩\nsuc (m + (n + p)) ∎\n7  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m m p)) ⟩\nsuc (m + (n + p)) ∎\n8  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m m n)) ⟩\nsuc (m + (n + p)) ∎\n9  begin\nsuc (m + n + p) ≡⟨ cong suc (+-assoc m n p) ⟩\nsuc (m + (n + p)) ≡⟨\nsym (cong (λ _ → suc (m + (n + p))) (+-assoc m m m)) ⟩\nsuc (m + (n + p)) ∎\n
         solutions = re.split('\n[0-9]+ +', str)[1:] # skip the first line
 
-        # need to insert two extra space for multiline solutions in order to preserve indentation
-        solutions = [ '\n  '.join(re.split('\n', solution)) for solution in solutions] 
+        # need to insert two extra spaces for multiline solutions in order to preserve indentation
+        solutions = [ '\n  '.join(re.split('\n', solution)) for solution in solutions]
+
+        # strip trailing newlines and spaces
+        solutions = [ solution.rstrip() for solution in solutions]
         
         self.print(f"solutions is: {solutions}")
         #    solution = " ".join(tokens[2:]) # skip the first "20  " (plus the extra space!) and put the tokens back
