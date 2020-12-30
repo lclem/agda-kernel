@@ -140,8 +140,8 @@ class AgdaKernel(Kernel):
         #cmd = cmd + "\n"
         self.process.sendline(cmd)
         #this more robust version will surive unexpected end of output from Agda
-        self.process.expect([pexpect.TIMEOUT, 'Agda2> ', pexpect.EOF], timeout=120)
-        result = self.process.before # str(...) added to make lint happy
+        self.process.expect([pexpect.TIMEOUT, 'Agda2> ', pexpect.EOF], timeout=240)
+        result = self.process.before
 
         #skip the first line (it's a copy of cmd)
         result = result[result.index('\n')+1:]
