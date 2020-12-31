@@ -95,6 +95,20 @@ class AgdaKernel(Kernel):
         Kernel.__init__(self, **kwargs)
         self.agda_version = self.readAgdaVersion()
 
+    def sendResponse(self, text):
+        try:
+            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': text})
+        except AttributeError: # during testing there is no such method, just ignore
+            self.print("Ignoring call to self.send_response")
+
+    def sendInfoResponse(self, text):
+        # ignore otherwise
+        if self.sendInfoMessages:
+            try:
+                self.send_response(self.iopub_socket, 'stream', {'name': 'stdinfo', 'text': text})
+            except AttributeError: # during testing there is no such method, just ignore
+                self.print("Ignoring call to self.send_response")
+
     # return line and column of an position in a string
     def line_of(self, s, n):
 
@@ -140,9 +154,23 @@ class AgdaKernel(Kernel):
 
         #cmd = cmd + "\n"
         self.process.sendline(cmd)
-        #this more robust version will surive unexpected end of output from Agda
-        self.process.expect([pexpect.TIMEOUT, 'Agda2> ', pexpect.EOF], timeout=240)
-        result = self.process.before
+        result = ""
+
+        while True:
+            #this more robust version will survive an unexpected end of output from Agda
+            prompt = self.process.expect([pexpect.TIMEOUT, pexpect.EOF, 'Agda2> ', '\(agda2-info-action "\*Type-checking\*"'], timeout=240)
+            response = self.process.before
+            result += response
+
+            if prompt == 0 or prompt == 1:
+                break
+            elif prompt == 2:
+                self.sendInfoResponse("DONE")
+                break
+            elif prompt == 3:
+                # keep jupyter informed about agda's partial responses
+                self.sendInfoResponse(response)
+                continue
 
         #skip the first line (it's a copy of cmd)
         result = result[result.index('\n')+1:]
@@ -225,6 +253,11 @@ class AgdaKernel(Kernel):
         absoluteFileName = os.path.abspath(fileName)
 
         preambleLength = 0
+
+        self.sendInfoMessages = False
+
+        if user_expressions and "sendInfoMessages" in user_expressions and user_expressions["sendInfoMessages"] == "yes":
+            self.sendInfoMessages = True
 
         if user_expressions and "agdaCMD" in user_expressions:
             self.agdaCMD = user_expressions["agdaCMD"]
@@ -347,28 +380,16 @@ class AgdaKernel(Kernel):
                         username = ""
 
                     self.print(f'Pushing, username: {username}') #to branch {branch}')
-
-                    try:
-                        self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'Pushing, username: {username}\n'})
-                    except AttributeError: # during testing there is no such method, just ignore
-                        self.print("Ignoring call to self.send_response")
+                    self.sendInfoResponse(f'Pushing, username: {username}\n')
 
                     if user_expressions and "password" in user_expressions:
                         self.print("Storing password")
                         password = user_expressions["password"]
-
-                        try:
-                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'Storing password\n'})
-                        except AttributeError: # during testing there is no such method, just ignore
-                            self.print("Ignoring call to self.send_response")
+                        self.sendInfoResponse(f'Storing password\n')
                     else:
                         self.print("No password provided")
                         password = ""
-
-                        try:
-                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'No password provided\n'})
-                        except AttributeError: # during testing there is no such method, just ignore
-                            self.print("Ignoring call to self.send_response")
+                        self.sendInfoResponse('No password provided\n')
 
                     child = pexpect.spawn(f'git push origin')
 
@@ -381,11 +402,7 @@ class AgdaKernel(Kernel):
                         )
 
                         self.print(f'Prompt = {prompt}')
-
-                        try:
-                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': f'Prompt = {prompt}\n'})
-                        except AttributeError: # during testing there is no such method, just ignore
-                            self.print("Ignoring call to self.send_response")
+                        self.sendInfoResponse(f'Prompt = {prompt}\n')
 
                         if prompt == 0:
                             child.sendline(username)
@@ -400,18 +417,10 @@ class AgdaKernel(Kernel):
                     if child.exitstatus != 0:
                         text = child.before.decode()
                         self.print(text)
-
-                        try:
-                            self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': text})
-                        except AttributeError: # during testing there is no such method, just ignore
-                            self.print("Ignoring call to self.send_response")
+                        self.sendInfoResponse(text)
 
                     self.print(f'Pushed!')
-
-                    try:
-                        self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': "Pushed!"})
-                    except AttributeError: # during testing there is no such method, just ignore
-                        self.print("Ignoring call to self.send_response")
+                    self.sendInfoResponse("Pushed!")
 
                 def persist(): #(self, fileName):
 
@@ -452,11 +461,7 @@ class AgdaKernel(Kernel):
             self.code = code
 
         if not silent or error != "":
-            stream_content = {'name': 'stdout', 'text': result}
-            try:
-                self.send_response(self.iopub_socket, 'stream', stream_content)
-            except AttributeError: # during testing there is no such method, just ignore
-                self.print("Ignoring call to self.send_response")
+            self.sendResponse(result)
 
         # return all holes
         holes_as_pairs_of_positions = self.findAllHoles(code)
@@ -558,11 +563,7 @@ class AgdaKernel(Kernel):
 
     def isHole(self, exp):
         result = exp == "?" or re.search("\\{!.*!\\}", exp) != None
-
-        try:
-            self.print(f'the expression "{exp}" is a hole? {result}')
-        except AttributeError: # during testing there is no such method, just ignore
-            self.print("Ignoring call to self.send_response")
+        self.print(f'the expression "{exp}" is a hole? {result}')
 
         return result
 
