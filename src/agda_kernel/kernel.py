@@ -94,6 +94,7 @@ class AgdaKernel(Kernel):
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
         self.agda_version = self.readAgdaVersion()
+#        self.kernel_lock = threading.Lock()
 
     def sendResponse(self, text):
         try:
@@ -500,7 +501,11 @@ class AgdaKernel(Kernel):
                 'payload': [],
                 'user_expressions': user_expressions_return,
                }
-               
+
+    # def do_execute(self, in_code, silent, store_history=True, user_expressions=None, allow_stdin=False):
+    #     with self.kernel_lock:
+    #         return self._do_execute(in_code, silent, store_history, user_expressions, allow_stdin)
+     
     def inComment(self, code, pos):
 
         # check whether there is a "--" on the left of pos, but not going to the previous line
