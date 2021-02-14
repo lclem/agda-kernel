@@ -77,7 +77,7 @@ class AgdaKernel(Kernel):
 
     '''
 
-    lock = threading.Lock()
+    #lock = threading.Lock()
 
     #process = Popen(['agda', '--interaction'], stdout=PIPE, stdin=PIPE, stderr=STDOUT)
     process = pexpect.spawnu('agda --interaction')
@@ -425,7 +425,7 @@ class AgdaKernel(Kernel):
 
                 def persist(): #(self, fileName):
 
-                    with lock:
+                    #with lock:
                         self.print(f'Git commit & push: {fileName}')
 
                         os.system('git pull')
@@ -443,12 +443,12 @@ class AgdaKernel(Kernel):
             result, error = self.runCmd(code, -1, -1, "", AGDA_CMD_LOAD)
             result = deescapify(result)
 
-            try:
-                #remove the .agdai file
-                agdai = fileName + "i"
-                os.remove(agdai)
-            except:
-                self.print("*.agdai file '%s' not found" % agdai)
+            # try:
+            #     #remove the .agdai file
+            #     agdai = fileName + "i"
+            #     os.remove(agdai)
+            # except:
+            #     self.print("*.agdai file '%s' not found" % agdai)
 
         # self.print("output: %s" % result)
 
