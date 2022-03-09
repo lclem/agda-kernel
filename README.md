@@ -1,4 +1,4 @@
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lclem/agda-kernel/master)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lclem/agda-kernel/master?filepath=example)
 [![Build Status](https://travis-ci.org/lclem/agda-kernel.svg)](https://travis-ci.org/lclem/agda-kernel)
 [![codecov.io](https://codecov.io/github/lclem/agda-kernel/branch/master/graph/badge.svg)](https://codecov.io/github/lclem/agda-kernel)
 [![Jupyter Notebook](https://img.shields.io/badge/jupyter-5.7.8-blue.svg)](https://github.com/jupyter/notebook/releases/tag/5.7.8)
